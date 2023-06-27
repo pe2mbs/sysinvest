@@ -1,17 +1,18 @@
 from common.plugin import MonitorPlugin, PluginResult
 import common.api as API
-from monitor.serverloads.cpu import SystemLoads
+from monitor.serverloads.cpu import SystemLoads, MemInfo, CpuInfo
+
 
 class ServerLoads( MonitorPlugin ):
     DEFAULT_TEMPLATE = """${message}
-Memory usage:     ${ memInfo.get( "present", None ) }
-CPU usage 1 min:  ${ cpuInfo.get( "total", {} ).get( "1 min" ) } / 5 min:  ${ cpuInfo.get( "total", {} ).get( "5 min" ) } / 15 min: ${ cpuInfo.get( "total", {} ).get( "15 min" ) }"""
+Memory usage:    ${ round( memInfo.Percent, 2 ) }% 
+CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5 min: ${ round( cpuInfo.get( "total", {} ).get( "5 min" ), 2 ) }% / 15 min: ${ round( cpuInfo.get( "total", {} ).get( "15 min" ), 2 ) }%"""
     def __init__( self, parent, obj  ):
         super().__init__( parent, obj )
-        self.__mem_threshold = 80
-        self.__cpu_threshold_1_min = 100
-        self.__cpu_threshold_5_min = 90
-        self.__cpu_threshold_15_min = 80
+        self.__mem_threshold = obj.get( 'threshold', {} ).get( 'memory', 80 )
+        self.__cpu_threshold_1_min = obj.get( 'threshold', {} ).get( 'cpu1min', 100 )
+        self.__cpu_threshold_5_min = obj.get( 'threshold', {} ).get( 'cpu5min', 90 )
+        self.__cpu_threshold_15_min = obj.get( 'threshold', {} ).get( 'cpu15min', 80 )
         self.__thread = SystemLoads()
         self.__thread.start()
         return
@@ -19,11 +20,11 @@ CPU usage 1 min:  ${ cpuInfo.get( "total", {} ).get( "1 min" ) } / 5 min:  ${ cp
     def execute( self ):
         task_result = PluginResult( self )
         memInfo, cpuInfo = self.__thread.getLoadData()
-        if isinstance( memInfo, dict ):
+        if isinstance( memInfo, MemInfo ):
             messages = []
             memOk   = True
             cpuOk   = True
-            if memInfo[ 'percent' ] >= self.__mem_threshold:
+            if memInfo.Percent >= self.__mem_threshold:
                 messages.append( "Memory threshold exceeded" )
                 memOk   = False
 
@@ -46,7 +47,7 @@ CPU usage 1 min:  ${ cpuInfo.get( "total", {} ).get( "1 min" ) } / 5 min:  ${ cp
             task_result.update( memOk and cpuOk, '\n'.join( messages ), memOk = memOk, cpuOk = cpuOk, memInfo = memInfo, cpuInfo = cpuInfo )
 
         else:
-            task_result.update( True, "Collecting", memInfo = {}, cpuInfo = {} )
+            task_result.update( True, "Collecting", memInfo = memInfo((0,0,0)), cpuInfo = {} )
 
         API.QUEUE.put( task_result )
         return

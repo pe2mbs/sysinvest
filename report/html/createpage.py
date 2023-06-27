@@ -62,7 +62,7 @@ class WriteHtmlPage( ReportPlugin ):
             print( exceptions.text_error_template().render() )
             raise
 
-        output_filename = self.Config.get( 'output', 'index.html' )
+        output_filename = self.Config.get( 'location', 'index.html' )
         if not output_filename.startswith( '/' ) and ':' not in output_filename:
             output_filename = os.path.join( os.curdir, output_filename )
 

@@ -25,11 +25,12 @@ import common.plugin.constants as const
 from dateutil import parser
 from common.plugin import MonitorPlugin, PluginResult
 import common.api as API
+from common.bytesizes import shorthand2sizeof
 
 
 class CheckFile( MonitorPlugin ):
     DEFAULT_TEMPLATE = """%if expired and exists:
-The database file ${filename} is too old ${ datetime.fromtimestamp( ctime ).strftime( "%Y-%m-%d %H:%M:%S" ) }
+The database file ${filename} is too old ${ datetime.fromtimestamp( mtime ).strftime( "%Y-%m-%d %H:%M:%S" ) }
 must be less than ${} hours.
 %elif exists:
 % if context.get('size_valid', UNDEFINED) is not UNDEFINED:
@@ -68,12 +69,16 @@ The database file ${filename} doesn t exist.
                         'atime': stat_data.st_atime,
                         'mtime': stat_data.st_mtime,
                         'ctime': stat_data.st_ctime,
-                        'blocks': stat_data.st_blocks,
+                        # 'blocks': stat_data.st_blocks,
                     } )
                     minimal_size = self.Attributes.get( 'minimal_size' )
                     if isinstance( minimal_size, int ):
                         attrs[ 'minimal_size' ] = minimal_size
                         res = attrs[ 'size_valid' ] = stat_data.st_size >= minimal_size
+
+                    elif isinstance( minimal_size, str ):
+                        attrs[ 'minimal_size' ] = minimal_size = shorthand2sizeof( minimal_size )
+                        res = attrs['size_valid'] = stat_data.st_size >= minimal_size
 
                     expire = self.Attributes.get( 'expire' )
                     if expire:
@@ -81,7 +86,7 @@ The database file ${filename} doesn t exist.
                             t = parser.parse( expire ).time()
                             expire = ( t.hour * 3600 ) + ( t.minute * 60 ) + t.second
 
-                        if stat_data.st_ctime + expire < time.time():
+                        if stat_data.st_mtime + expire < time.time():
                             msg = 'File exists, but is expired'
                             attrs[ 'expired' ] = True
                             res = False
