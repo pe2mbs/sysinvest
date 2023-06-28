@@ -43,8 +43,7 @@ class CheckPid( MonitorPlugin ):
                                     "size": stat_data.st_size,
                                     "atime": stat_data.st_atime,
                                     "mtime": stat_data.st_mtime,
-                                    "ctime": stat_data.st_ctime,
-                                    "blocks": stat_data.st_blocks }
+                                    "ctime": stat_data.st_ctime }
 
                     presult, pid = checkPidFilename( filename )
                     # now check if the PID exists
