@@ -35,7 +35,11 @@ must be less than ${} hours.
 %elif exists:
 % if context.get('size_valid', UNDEFINED) is not UNDEFINED:
   The database file ${filename} exist and is valid.
-  The file size is invalid expected ${minimal_size}, file has ${size}.  
+%  if size_valid:  
+  The file size is valid, file has ${size}.
+%  else:
+  The file size is invalid expected ${minimal_size}, file has ${size}.
+%  endif    
 % else:
 The database file ${filename} exist and is valid.
 % endif
