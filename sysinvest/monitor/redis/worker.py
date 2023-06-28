@@ -45,8 +45,8 @@ class RedisMonitor( MonitorPlugin ):
 
             else:
                 cred = _passwd
-                
-        else
+
+        else:
             cred = ''
 
         url = f"{scheme}://{cred}@{host}:{port}/{database}"
