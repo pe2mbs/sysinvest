@@ -38,12 +38,16 @@ class RedisMonitor( MonitorPlugin ):
             ssl_keyfile = ssl_certfile = None
             scheme = 'redis'
 
-        _passwd = '*' * len(passwd)
-        if isinstance( username, str ):
-            cred = f"{username}:{_passwd}"
+        if passwd is not None:
+            _passwd = '*' * len(passwd)
+            if isinstance( username, str ):
+                cred = f"{username}:{_passwd}"
 
-        else:
-            cred = _passwd
+            else:
+                cred = _passwd
+                
+        else
+            cred = ''
 
         url = f"{scheme}://{cred}@{host}:{port}/{database}"
         task_result = PluginResult( self )
