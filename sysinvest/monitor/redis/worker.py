@@ -41,15 +41,15 @@ class RedisMonitor( MonitorPlugin ):
         if passwd is not None:
             _passwd = '*' * len(passwd)
             if isinstance( username, str ):
-                cred = f"{username}:{_passwd}"
+                cred = f"{username}:{_passwd}@"
 
             else:
-                cred = _passwd
+                cred = f"{_passwd}@"
 
         else:
             cred = ''
 
-        url = f"{scheme}://{cred}@{host}:{port}/{database}"
+        url = f"{scheme}://{cred}{host}:{port}/{database}"
         task_result = PluginResult( self )
         if redis is not None:
             try:
