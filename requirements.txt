@@ -2,5 +2,16 @@ Mako
 psutil
 python-dateutil
 PyYAML
-# mysql
 pycron
+
+# For HTTP/HTTPS
+# requests
+# certifi
+# For HTTPS on windows
+# python-certifi-win32
+
+# MySql and MariaDb
+# mysql
+
+# For REDIS
+# redis
