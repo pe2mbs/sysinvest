@@ -2,7 +2,9 @@ import os
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
 import traceback
 import sysinvest.common.plugin.constants as const
-import monitor.http.requester as req
+import sysinvest.monitor.http.requester as req
+import sysinvest.common.api as API
+import certifi
 
 
 def checkCertKey( cert, key, result ):
@@ -39,6 +41,8 @@ class Https( MonitorPlugin ):
         super().execute()
         task_result = PluginResult( self )
         kwargs = self.Attributes.get( 'parameters', {} )
+        self.log.info( f"CA certifcates: {certifi.where()}" )
+
         if 'username' in kwargs:
             # JNeed to translate the username/password
             auth = ( kwargs[ 'username' ], kwargs[ 'password' ] )
@@ -51,7 +55,8 @@ class Https( MonitorPlugin ):
         # :param verify: (optional) Either a boolean, in which case it controls whether we verify
         #                           the server's TLS certificate, or a string, in which case it must be a path
         #                           to a CA bundle to use. Defaults to ``True``.
-        verify = kwargs.get( 'verify' )
+        task_result.update(True, "")
+        verify = kwargs.get( 'verify', certifi.where() )
         if isinstance( verify, bool ):
             pass
 
@@ -93,7 +98,7 @@ class Https( MonitorPlugin ):
             url = self.Attributes.get( 'url', 'https://localhost' )
             if req.requests is not None:
                 try:
-                    result = req.doRequest( self, url, **kwargs )
+                    result = req.doRequest( self, task_result, url, **kwargs )
 
                 except Exception as exc:
                     task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() },
@@ -104,5 +109,5 @@ class Https( MonitorPlugin ):
                                          const.C_TRACEBACK: traceback.format_stack() },
                                        filename = url )
 
-        self.Monitor.Queue.put( task_result )
+        API.QUEUE.put( task_result )
         return

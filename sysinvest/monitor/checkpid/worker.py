@@ -18,6 +18,7 @@
 #   Boston, MA 02110-1301 USA
 #
 import os
+import psutil
 import traceback
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
 import sysinvest.common.plugin.constants as const
@@ -26,6 +27,19 @@ import sysinvest.common.api as API
 
 
 class CheckPid( MonitorPlugin ):
+    DEFAULT_TEMPLATE = """${message}
+%if context.get('mtime', UNDEFINED) is not UNDEFINED:
+Filename: ${filename} PID ${pid} created ${ datetime.fromtimestamp( mtime ).strftime( "%Y-%m-%d %H:%M:%S" ) }
+%else:
+Filename: ${filename} PID ${pid}
+%endif
+%if context.get('msg', UNDEFINED) is not UNDEFINED:
+% for item in msg:
+${item} 
+% endfor
+%endif
+"""
+
     def execute( self ):
         super().execute(  )
         task_result = PluginResult( self )
@@ -44,14 +58,45 @@ class CheckPid( MonitorPlugin ):
                                     "atime": stat_data.st_atime,
                                     "mtime": stat_data.st_mtime,
                                     "ctime": stat_data.st_ctime }
-
-                    presult, pid = checkPidFilename( filename )
                     # now check if the PID exists
+                    presult, pid = checkPidFilename( filename )
                     if not presult:
                         task_result.update( False, f"process does not exist", pidFileData, filename = filename, pid = pid )
 
                     else:
-                        task_result.update( True, f"process exists", pidFileData, filename = filename, pid = pid )
+                        process = psutil.Process( pid )
+                        executable = self.Attributes.get( 'executable' )
+                        if isinstance( executable, str ):
+                            cmdline = process.cmdline()
+                            if cmdline[ 0 ] == executable:
+                                commandline = self.Attributes.get( 'commandline' )
+                                if isinstance( commandline, str ):
+                                    commandline = commandline.split( ' ' )
+
+                                if isinstance( commandline, ( list, tuple ) ):
+                                    msg = []
+                                    for cmd in commandline:
+                                        if cmd not in cmdline:
+                                            msg.append( f"{cmd} not found in command line" )
+
+                                    if len( msg ) == 0:
+                                        cmdline = ' '.join(cmdline)
+                                        task_result.update( True, f"process exists: {cmdline}", pidFileData,
+                                                            filename=filename, pid=pid)
+
+                                    else:
+                                        cmdline = ' '.join( cmdline )
+                                        task_result.update( False, f"process exists, but has invalid command line: {cmdline}", pidFileData,
+                                                            msg = msg, filename=filename, pid=pid)
+
+                                else:
+                                    cmdline = ' '.join(cmdline)
+                                    task_result.update(False,
+                                                       f"process exists, but has invalid executable line: {cmdline}",
+                                                       pidFileData, filename=filename, pid=pid)
+
+                        else:
+                            task_result.update( True, f"process exists", pidFileData, filename = filename, pid = pid )
 
                 else:
                     task_result.update( False, "Filename doesn't exist" )

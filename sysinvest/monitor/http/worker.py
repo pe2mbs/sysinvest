@@ -1,7 +1,7 @@
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
 import traceback
 import sysinvest.common.plugin.constants as const
-import monitor.http.requester as req
+import sysinvest.monitor.http.requester as req
 import sysinvest.common.api as API
 
 
