@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, date, time
 import pymysql
 import pymysql.cursors
 from pymysql.err import MySQLError
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import PluginResult
 import sysinvest.common.api as API
 from sysinvest.common.dbutil import SqlMonitorPlugin
 
