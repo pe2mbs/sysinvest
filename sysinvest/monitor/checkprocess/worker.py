@@ -41,7 +41,7 @@ class CheckProcess( MonitorPlugin ):
             for proc in psutil.process_iter():
                 try:
                     cmdline = proc.cmdline()
-                    self.log.info( "Process {}".format( " ".join( cmdline ) ) )
+                    # self.log.info( "Process {}".format( " ".join( cmdline ) ) )
                     if len( cmdline ) > 0 and cmdline[0] == executable:
                         count = 0
                         for arg in commandline:

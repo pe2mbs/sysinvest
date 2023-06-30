@@ -19,59 +19,82 @@
 #
 from typing import Union, Optional
 from sysinvest.common.plugin import PluginResult, MonitorPlugin, ReportPlugin
+from sysinvest.common.proxy import ProxyMixin
 try:
     from jira import JIRA
+    from requests.exceptions import ConnectionError
 
 except:
     JIRA = None
 
+# try:
+#     import jwt
+#
+# except:
+#     jwt = None
 
-class ReportJira( ReportPlugin ):
+import jwt
+
+class ReportJira( ReportPlugin, ProxyMixin ):
     def __init__( self, config: dict ):
         super().__init__( 'jira', config )
+        ProxyMixin.__init__( self, self.Config.get( 'proxy', None ) )
         return
 
     def notify( self, result: PluginResult ):
         # All is handled here
+        if not result.Result:
+            server = self.Config.get('host', {})
+            if not isinstance( server, str ):
+                raise Exception( f"jira.host parameter not configured" )
+
+            project = self.Config.get( 'project' )
+            if not isinstance( project, str ):
+                raise Exception( f"jira.project parameter not configured" )
+
+            if not isinstance( self.Config.get( 'username' ), str ):
+                raise Exception( f"jira.username parameter not configured" )
+
+            if not isinstance( self.Config.get('password' ) , str ):
+                raise Exception( f"jira.password parameter not configured" )
+
+            try:
+                self.sslVerify = self.Config.get( 'sslverify', True )
+                # test-tool-support-sysinvest
+                #
+                # API Token signature
+                # 8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug
+                #
+                # API Token
+                # eyJhbGciOiJFUzI1NiIsImtpZCI6IktaTi1QUkQtMDAxIn0.eyJpc3MiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJhdWQiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJzdWIiOiJ0ZXN0LXRvb2wtc3VwcG9ydC1zeXNpbnZlc3QiLCJpc0FkbWluIjpmYWxzZSwidXNlcnR5cGUiOiJLUFJPSkVDVCIsIm5iZiI6MTY4ODA2ODUzMywianRpIjoiMFJSNlFmU1ZGUTNEWHZzbmwyOXRndyIsImlhdCI6MTY4ODA2ODU5M30.8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug
+                token   = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IktaTi1QUkQtMDAxIn0.eyJpc3MiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJhdWQiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJzdWIiOiJ0ZXN0LXRvb2wtc3VwcG9ydC1zeXNpbnZlc3QiLCJpc0FkbWluIjpmYWxzZSwidXNlcnR5cGUiOiJLUFJPSkVDVCIsIm5iZiI6MTY4ODA2ODUzMywianRpIjoiMFJSNlFmU1ZGUTNEWHZzbmwyOXRndyIsImlhdCI6MTY4ODA2ODU5M30.8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug'
+                headers = { 'Authorization': 'JWT {}'.format( token ) }
+                jira = JIRA( server,
+                             basic_auth = ( ( self.Config.get( 'username' ), self.Config.get('password' ) ) ),
+                             # token_auth = token,
+                             options = { "server": server,
+                                         "verify": self.sslVerify,
+                                         "check_update": True,
+                                         # "headers": headers
+                                         },
+                             validate = True,
+                             logging = True,
+                             proxies = self.resolveViaProxy( server ) )
+
+                new_issue = jira.create_issue( project = project,
+                                               summary = result.Plugin.Name,
+                                               description = result.buildMessage(),
+                                               issuetype = { 'name': self.Config.get( 'issue', 'Bug' ) } )
+
+            except ConnectionError:
+                self.log.error( f"Could not connect to {host}" )
+
+            except Exception as exc:
+                self.log.exception( "During JIRA update" )
+
 
         return
 
     def publish( self ):
         # Does notthing
-        return
-
-    def sendmail( self, group: str, message: str, subject: Optional[str] = None, attachments: Optional[list] = None ):
-        # host:           jira.pe2mbs.nl
-        jiraProject = self.__cfg.get( 'project', {} )
-        host = jiraProject.get( 'project', {} )
-        if not isinstance( host, str ):
-            raise Exception( f"jira.host parameter not configured" )
-
-        project = jiraProject.get( 'project' )
-        if not isinstance( project, str ):
-            raise Exception( f"jira.project parameter not configured" )
-
-        jira = JIRA( host, auth = ( jiraProject.get( 'username' ), jiraProject.get( 'password' ) ) )
-        new_issue = jira.create_issue( project = project,
-                                       summary = subject,
-                                       description = message,
-                                       issuetype = {'name': jiraProject.get( 'issue', 'Bug' ) } )
-        assignee = jiraProject.get( 'assignee' )
-        if isinstance( assignee, str ):
-            new_issue.update( assignee = { 'name': assignee } )
-
-        admin = jiraProject.get( 'groups', {} ).get( 'admin', [] )
-        addressees = jiraProject.get( 'groups', {} ).get( group, [] )
-        if len( addressees ) == 0:
-            addressees = admin
-
-        for username in addressees:
-            jira.add_watcher( new_issue, username )
-
-        # read and upload a file (note binary mode for opening, it's important):
-        if isinstance( attachments, list ):
-            for filename in attachments:
-                with open( filename, 'rb') as f:
-                    jira.add_attachment( issue = new_issue, attachment = f )
-
         return
