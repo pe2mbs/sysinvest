@@ -24,6 +24,7 @@ import time
 import datetime
 import logging
 import importlib
+from threading import Event
 from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 
@@ -33,6 +34,7 @@ class Monitor( list ):
         super().__init__()
         self.log            = logging.getLogger( 'monitor' )
         self.__p            = psutil.Process(os.getpid())
+        self.__event        = Event()
         self.__running      = False
         self.__passes       = 0
         self.__cfg          = config
@@ -50,7 +52,6 @@ class Monitor( list ):
                 self.log.exception( f"During module load: {obj}" )
 
         return
-
 
     def addToQueue( self, result ):
         self.log.info( f"Queue add {API.QUEUE.qsize()}" )
@@ -77,29 +78,38 @@ class Monitor( list ):
         }
 
     def stop( self ):
-        self.__running = False
+        self.__event.set()
         return
 
     def run( self ):
-        self.__running = True
         isStarting = True
-        while self.__running:
-            self.__passes += 1
-            start = int( time.time() )
+        try:
+            while not self.__event.is_set():
+                self.__passes += 1
+                start = int( time.time() )
+                for task in self:
+                    task: MonitorPlugin
+                    if not pycron.is_now( task.Cron ) and not isStarting:
+                        continue
+
+                    self.log.info( f"{task.Name} is being started" )
+                    task.execute()
+                    self.log.info( f"{task.Name} is finished" )
+
+                isStarting = False
+                # Loop time should be about a minute, sleep the remaining time
+                sleepTime = 60 - ( int( time.time() ) - start )
+                self.log.info( f"Sleep time: {sleepTime}" )
+                if sleepTime > 0:
+                    time.sleep( sleepTime)
+
+        except:
+            raise
+
+        finally:
+            # Stop all threaded tasks
             for task in self:
-                task: MonitorPlugin
-                if not pycron.is_now( task.Cron ) and not isStarting:
-                    continue
-
-                self.log.info( f"{task.Name} is being started" )
-                task.execute()
-                self.log.info( f"{task.Name} is finished" )
-
-            isStarting = False
-            # Loop time should be about a minute, sleep the remaining time
-            sleepTime = 60 - ( int( time.time() ) - start )
-            self.log.info( f"Sleep time: {sleepTime}" )
-            if sleepTime > 0:
-                time.sleep( sleepTime)
+                if hasattr( task, 'stop' ):
+                    task.stop()
 
         return

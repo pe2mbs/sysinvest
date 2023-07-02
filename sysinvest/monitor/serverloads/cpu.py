@@ -1,6 +1,6 @@
 from typing import Union
 import psutil
-from threading import Thread
+from threading import Thread, Event, RLock
 import time
 import statistics
 
@@ -45,6 +45,8 @@ class MemInfo( object ):
 class SystemLoads( Thread ):
     def __init__( self ):
         super().__init__()
+        self.__event = Event()
+        self.__lock = RLock()
         self.__cpuData = [ [] for i in range( len( psutil.cpu_percent( percpu = True ) ) ) ]
         self.__memData = []
         return
@@ -85,9 +87,14 @@ class SystemLoads( Thread ):
         }
         return result
 
+    def stop( self ):
+        self.__event.set()
+        self.join()
+        return
+
     def run( self ):
         cnt = 0
-        while True:
+        while not self.__event.is_set():
             start = time.time()
             for idx, cpu_pers in enumerate( psutil.cpu_percent(percpu=True) ):
                 self.__cpuData[ idx ].append( cpu_pers )
