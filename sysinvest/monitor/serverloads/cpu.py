@@ -1,3 +1,22 @@
+#
+#   sysinvest - Python system monitor and investigation utility
+#   Copyright (C) 2022-2023 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
+#
+#   This library is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU Library General Public License GPL-2.0-only
+#   as published by the Free Software Foundation; only version 2 of the
+#   License.
+#
+#   This library is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Library General Public License for more details.
+#
+#   You should have received a copy of the GNU Library General Public
+#   License GPL-2.0-only along with this library; if not, write to the
+#   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301 USA
+#
 from typing import Union
 import psutil
 from threading import Thread, Event, RLock
@@ -96,32 +115,35 @@ class SystemLoads( Thread ):
         cnt = 0
         while not self.__event.is_set():
             start = time.time()
+            self.__lock.acquire()
             for idx, cpu_pers in enumerate( psutil.cpu_percent(percpu=True) ):
                 self.__cpuData[ idx ].append( cpu_pers )
 
+            self.__lock.release()
             mem = psutil.virtual_memory()
             self.__memData.append( MemInfo( mem ) )
             time.sleep( 5 - ( time.time() - start ) )
             if len( self.__cpuData ) > (12 * 15):
+                self.__lock.acquire()
                 del self.__cpuData[ 0 ]
                 del self.__memData[ 0 ]
+                self.__lock.release()
 
             cnt += 1
 
         return
 
     def getLoadData( self ):
+        result = (None, None)
         if len( self.__memData ) > 0:
-            return ( self.__memData[ -1 ], self.__getCpuAverages() )
+            self.__lock.acquire()
+            try:
+                result = ( self.__memData[ -1 ], self.__getCpuAverages() )
 
-        return ( None, None )
+            except:
+                pass
 
+            finally:
+                self.__lock.release()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    sysLoads = SystemLoads()
-    sysLoads.run()
-
-
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+        return result

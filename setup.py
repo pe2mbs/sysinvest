@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 #   sysinvest - Python system monitor and investigation utility
 #   Copyright (C) 2022-2023 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
@@ -17,5 +18,32 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.monitor.network.worker import NetworkMonitor
-CLASS_NAME = 'NetworkMonitor'
+from setuptools import setup, find_packages
+
+
+setup(
+    name='sysinvest',
+    version='0.2.0',
+    install_requires=[
+        'Mako',
+        'psutil',
+        'python-dateutil',
+        'PyYAML',
+        'pycron',
+        'importlib-metadata; python_version >= "3.8"'
+    ],
+    include_package_data=True,
+    package_data={ "": [ "*.md", "*.mako" ],
+                   "sysinvest/template": [ "*.mako" ] },
+    packages=find_packages(
+        # All keyword arguments below are optional:
+        where='',  # '.' by default
+        include=[ 'sysinvest*' ],  # ['*'] by default
+    ),
+    entry_points={
+        'console_scripts': [
+            'sysInvest = sysinvest.__main__:main',
+        ]
+    }
+
+)

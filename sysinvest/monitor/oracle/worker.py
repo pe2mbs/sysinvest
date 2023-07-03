@@ -19,19 +19,37 @@
 #
 from mako.template import Template
 from datetime import datetime, timedelta, date, time
-import pymysql
-import pymysql.cursors
-from pymysql.err import MySQLError
 from sysinvest.common.plugin import PluginResult
 import sysinvest.common.api as API
 from sysinvest.common.dbutil import SqlMonitorPlugin
+import cx_Oracle
 
 
-class MySqlMonitor( SqlMonitorPlugin ):
+
+class OracleMonitor( SqlMonitorPlugin ):
     def __init__( self, parent, obj ):
-        super().__init__( parent, obj, ( 'mysql','mariadb' ) )
+        super().__init__( parent, obj, ( 'oracle', ) )
         return
 
+    # C_QUERY_EVENT_LIST = """SELECT state as STATE
+    #         , Module_id as MODULE_ID
+    #         , DT
+    #        , count(*) as COUNTER
+    # FROM (
+    #          select case when state = 1 then 'Waiting'
+    #             when state = 2 then 'Active'
+    #             when state = 4 then 'Queue'
+    #             when state = 5 then 'Depending'
+    #             when state = 6 then 'Incorrect'
+    #                            else to_char(state)
+    #        end as STATE
+    #      , module_id
+    #       , to_char(e.START_TIME,'YYYY-MM-DD') as dt
+    #       FROM {dbSchema}.event e
+    #    WHERE state not in (  3 , 7)
+    #  )
+    # group BY state , module_id , dt
+    # ORDER BY 3 desc , 1 , 2"""
     def execute( self ):
         super().execute()
         task_result = PluginResult( self )
@@ -39,8 +57,7 @@ class MySqlMonitor( SqlMonitorPlugin ):
         try:
             self.getDatabaseConfig()
             resultType = self.Attributes.get('type', 'rows')
-            with pymysql.connect( host = self.Host, port = self.Port, user = self.Username, password = self.Password, database = self.Database,
-                                  cursorclass = pymysql.cursors.Cursor if resultType == 'scalar' else pymysql.cursors.DictCursor ) as connection:
+            with cx_Oracle.connect( user = self.Username, password = self.Password, dsn = self.Dsn ) as connection:
                 with connection.cursor() as cursor:
                     # Read a single record
                     parameters: dict = self.Attributes.get('parameters', {})
@@ -59,7 +76,7 @@ class MySqlMonitor( SqlMonitorPlugin ):
         except ValueError as exc:
             task_result.update( False, f"{exc}" )
 
-        except MySQLError as exc:
+        except cx_Oracle.DatabaseError as exc:
             task_result.update( False, f"{exc}" )
 
         API.QUEUE.put( task_result )

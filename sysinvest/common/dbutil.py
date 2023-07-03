@@ -31,6 +31,7 @@ class SqlMonitorPlugin( MonitorPlugin ):
         self.__username = None
         self.__password = None
         self.__database = None
+        self.__dsn      = None
         return
 
     @property
@@ -57,9 +58,13 @@ class SqlMonitorPlugin( MonitorPlugin ):
     def Database(self):
         return self.__database
 
+    @property
+    def Dsn(self):
+        return self.__dsn
+
     def getDatabaseConfig( self ):
         url = self.Attributes.get('url')
-        if isinstance(url, str):
+        if isinstance( url, str ):
             o = urlparse(url)
             if isinstance( self.__allowed_schemes, (list,tuple)) and o.scheme not in self.__allowed_schemes:
                 raise ValueError( f"scheme '{o.scheme}'  did not match the allowed schemes {self.__allowed_schemes}" )
@@ -71,11 +76,16 @@ class SqlMonitorPlugin( MonitorPlugin ):
             self.__database = o.path[1:]
 
         else:
-            self.__host = self.Attributes.get('host')
-            self.__port = self.Attributes.get('port', 3306)
+            self.__dsn = self.Attributes.get( 'dsn' )
             self.__username = self.Attributes.get('username')
             self.__password = self.Attributes.get('password')
-            self.__database = self.Attributes.get('database')
+            if self.__dsn is None:
+                self.__host = self.Attributes.get('host')
+                self.__port = self.Attributes.get('port', 3306)
+                self.__database = self.Attributes.get('database')
+
+            else:
+                return
 
         if self.__host is None:
             raise ValueError("'host' or 'url' not set")
@@ -101,8 +111,11 @@ class SqlMonitorPlugin( MonitorPlugin ):
                 task_result.update(False, f'result mismatch, expected {expected}, got {result[0]}')
 
         elif resultType == 'rows':
+            if expected is None:
+                return
+
             for row, (cfgRecord, dbRecord) in enumerate(zip_longest(expected, cursor.fetchall())):
-                if isinstance(cfgRecord, dict):
+                if isinstance(cfgRecord, dict) and isinstance(dbRecord, dict):
                     # Do the compare
                     for col, ((cfgField, cfgValue), (dbField, dbValue)) in enumerate(
                             zip_longest(cfgRecord.items(), dbRecord.items())):
@@ -119,13 +132,35 @@ class SqlMonitorPlugin( MonitorPlugin ):
                                                cfgField=cfgField)
                             break
 
-                elif isinstance(cfgRecord, (list, tuple)):
+                elif isinstance(cfgRecord, (list, tuple)) and isinstance(dbRecord, dict):
                     for col, (cfgValue, dbValue) in enumerate(zip_longest(cfgRecord, dbRecord.values())):
                         if cfgValue != dbValue:
                             task_result.update(False,
                                                f"Record {row + 1} don't match in column {col + 1} plugin '{self.Name}'",
+                                               dbRecord=list(dbRecord.values()),
+                                               cfgRecord=cfgRecord,
+                                               cfgValue=cfgValue,
+                                               dbValue=dbValue)
+                            break
+
+                elif isinstance(cfgRecord, dict) and isinstance(dbRecord, (list, tuple)):
+                    for col, (cfgValue, dbValue) in enumerate(zip_longest(cfgRecord.values(), dbRecord)):
+                        if cfgValue != dbValue:
+                            task_result.update(False,
+                                               f"Record {row + 1} don't match in column {col + 1} plugin '{self.Name}'",
                                                dbRecord=dbRecord,
-                                               cfgRecord=list(dbRecord.values()),
+                                               cfgRecord=list(cfgRecord.values()),
+                                               cfgValue=cfgValue,
+                                               dbValue=dbValue)
+                            break
+
+                elif isinstance(cfgRecord, (list, tuple)) and isinstance(dbRecord, (list, tuple)):
+                    for col, (cfgValue, dbValue) in enumerate(zip_longest( cfgRecord, dbRecord ) ):
+                        if cfgValue != dbValue:
+                            task_result.update(False,
+                                               f"Record {row + 1} don't match in column {col + 1} plugin '{self.Name}'",
+                                               dbRecord=dbRecord,
+                                               cfgRecord=dbRecord,
                                                cfgValue=cfgValue,
                                                dbValue=dbValue)
                             break
