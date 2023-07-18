@@ -1,0 +1,9 @@
+# Include the README, LICENCE and USAGE markdown files.
+include *.md
+
+# Include an example template file
+include template_index.mako
+
+# Include the data files
+recursive-include sysinvest/template *
+recursive-include sysinvest/report *.mako

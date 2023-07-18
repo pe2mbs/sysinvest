@@ -27,13 +27,11 @@ from sysinvest.common.monitor import Monitor
 from sysinvest.common.collector import Collector
 from queue import Queue
 import sysinvest.common.api as API
-
-__version__     = '0.1.0'
-__date__        = ''
+import sysinvest.version as version
 
 def banner():
-    print(f"""sysInvest infrastructor monitor, version {__version__} {__date__}
-Copyright 2023 Marc Bertens-Nguyen""")
+    print(f"""{version.package} {version.description}, version {version.version} date {version.date}
+{version.copyright}""")
     return
 
 

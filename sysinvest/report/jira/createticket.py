@@ -27,13 +27,6 @@ try:
 except:
     JIRA = None
 
-# try:
-#     import jwt
-#
-# except:
-#     jwt = None
-
-import jwt
 
 class ReportJira( ReportPlugin, ProxyMixin ):
     def __init__( self, config: dict ):
@@ -60,34 +53,39 @@ class ReportJira( ReportPlugin, ProxyMixin ):
 
             try:
                 self.sslVerify = self.Config.get( 'sslverify', True )
-                # test-tool-support-sysinvest
-                #
-                # API Token signature
-                # 8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug
-                #
-                # API Token
-                # eyJhbGciOiJFUzI1NiIsImtpZCI6IktaTi1QUkQtMDAxIn0.eyJpc3MiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJhdWQiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJzdWIiOiJ0ZXN0LXRvb2wtc3VwcG9ydC1zeXNpbnZlc3QiLCJpc0FkbWluIjpmYWxzZSwidXNlcnR5cGUiOiJLUFJPSkVDVCIsIm5iZiI6MTY4ODA2ODUzMywianRpIjoiMFJSNlFmU1ZGUTNEWHZzbmwyOXRndyIsImlhdCI6MTY4ODA2ODU5M30.8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug
-                token   = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IktaTi1QUkQtMDAxIn0.eyJpc3MiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJhdWQiOiJLYXphbiBVc2VyIE1hbmFnZW1lbnQiLCJzdWIiOiJ0ZXN0LXRvb2wtc3VwcG9ydC1zeXNpbnZlc3QiLCJpc0FkbWluIjpmYWxzZSwidXNlcnR5cGUiOiJLUFJPSkVDVCIsIm5iZiI6MTY4ODA2ODUzMywianRpIjoiMFJSNlFmU1ZGUTNEWHZzbmwyOXRndyIsImlhdCI6MTY4ODA2ODU5M30.8N9MD6_tUSpL6Fg_xWQbfn_kKXIj_EbYCzFzeRaobybL2r2wnP1ecud63s2hZcZRB7PUreTjk5Y3ONoLbA4jug'
-                headers = { 'Authorization': 'JWT {}'.format( token ) }
                 jira = JIRA( server,
                              basic_auth = ( ( self.Config.get( 'username' ), self.Config.get('password' ) ) ),
-                             # token_auth = token,
                              options = { "server": server,
                                          "verify": self.sslVerify,
                                          "check_update": True,
-                                         # "headers": headers
                                          },
                              validate = True,
                              logging = True,
                              proxies = self.resolveViaProxy( server ) )
 
-                new_issue = jira.create_issue( project = project,
-                                               summary = result.Plugin.Name,
-                                               description = result.buildMessage(),
-                                               issuetype = { 'name': self.Config.get( 'issue', 'Bug' ) } )
+                query = f'summary ~ "{result.Plugin.Name}" and status != Closed'
+                jiraIssues = jira.search_issues( query )
+                if isinstance( jiraIssues, dict ) and len( jiraIssues ) > 0:
+                    self.log.warning( f"Jira Issue found: {jiraIssues} with status {jiraIssues}" )
+
+                elif isinstance( jiraIssues, list ) and len( jiraIssues ) > 0:
+                    for issue in jiraIssues:
+                        status  = issue.raw.get('fields',{}).get('status',{}).get('name', 'UNKNOWN' )
+                        self.log.warning( f"Jira Issue(s) found: {issue.key} with status '{status}'" )
+
+                else:
+                    new_issue = jira.create_issue( project = project,
+                                                   summary = result.Plugin.Name,
+                                                   description = result.buildMessage(),
+                                                   priority = { "name": 'Critical' },
+                                                   issuetype = { 'name': self.Config.get( 'issue', 'Bug' ) } )
+                    for watcher in self.Config.get( 'watchers', [] ):
+                        jira.add_watcher( new_issue, watcher )
+
+                    self.log.warning(f"Jira Issue created: {new_issue}")
 
             except ConnectionError:
-                self.log.error( f"Could not connect to {host}" )
+                self.log.error( f"Could not connect to {server}" )
 
             except Exception as exc:
                 self.log.exception( "During JIRA update" )

@@ -34,7 +34,8 @@ setup(
     ],
     include_package_data=True,
     package_data={ "": [ "*.md", "*.mako" ],
-                   "sysinvest/template": [ "*.mako" ] },
+                   "sysinvest": [ 'template/*.*', 'sysinvest/report/template_index.mako' ],
+                   },
     packages=find_packages(
         # All keyword arguments below are optional:
         where='',  # '.' by default

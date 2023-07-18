@@ -17,7 +17,6 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-import logging
 from sysinvest.common.plugin import PluginResult, MonitorPlugin
 from mako.template import Template
 from mako import exceptions
@@ -31,10 +30,37 @@ import socket
 class WriteHtmlPage( ReportPlugin ):
     def __init__( self, config: dict ):
         super().__init__( 'html', config )
-        self.log = logging.getLogger( 'html' )
+        # self.log = logging.getLogger( 'html' )
         self.log.info( f"Initialize reporter html: {self.Config}" )
         self.__render = {}
         self.__lock = RLock()
+        self.__template = None
+        self.loadTemplate()
+        return
+
+    def loadTemplate( self ):
+        template_filename = self.Config.get( 'template', 'template_index.mako' )
+        if not template_filename.startswith( '/' ) and ':' not in template_filename:
+            # relative path
+            module_direcory = os.path.abspath( os.path.dirname( __file__ ) )
+            package_direcory = os.path.abspath( os.path.join( module_direcory, '..', '..' ) )
+
+            for directory in ( os.curdir, module_direcory, package_direcory ):
+                tmp = os.path.join( directory, template_filename )
+                if os.path.exists( tmp ):
+                    template_filename = tmp
+                    break
+
+            if not os.path.exists( template_filename ):
+                raise FileNotFoundError( f"Could not find template {template_filename}" )
+
+        if not os.path.exists( template_filename ):
+            raise FileNotFoundError( f"Could not find template {template_filename}" )
+
+        self.log.info( f"Loading template {template_filename}")
+        with open( template_filename, 'r' ) as stream:
+            self.__template = Template( stream.read() )
+
         return
 
     def notify( self, result: PluginResult ):
@@ -47,26 +73,12 @@ class WriteHtmlPage( ReportPlugin ):
         return
 
     def publish( self ):
-        template_filename = self.Config.get( 'template', 'template_index.html' )
-        if not template_filename.startswith( '/' ) and ':' not in template_filename:
-            if os.path.exists( os.path.join( os.curdir, template_filename ) ):
-                template_filename = os.path.join( os.curdir, template_filename )
-
-            elif os.path.exists( os.path.join( os.path.dirname( __file__ ), template_filename ) ):
-                template_filename = os.path.join( os.path.dirname( __file__ ), template_filename )
-
-            else:
-                raise FileNotFoundError( f"Could not find template {template_filename}" )
-
-        if not os.path.exists( template_filename ):
-            raise FileNotFoundError( f"Could not find template {template_filename}" )
-
-        with open( template_filename, 'r' ) as stream:
-            template = Template( stream.read() )
+        if self.__template is None:
+            raise Exception( "templat enot loaded" )
 
         interval = self.Config.get( 'interval', 5 )
         try:
-            template_rendered = template.render( pluginResults = self.__render,
+            template_rendered = self.__template.render( pluginResults = self.__render,
                                                  interval = interval,
                                                  lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
                                                  computername = socket.gethostbyaddr(socket.gethostname())[0] )

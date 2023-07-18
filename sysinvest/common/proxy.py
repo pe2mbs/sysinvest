@@ -31,15 +31,21 @@ urllib3.disable_warnings()
 
 class ProxyMixin( object ):
     def __init__( self, proxy = None, **kwargs ):
-        self.__logger   = logging.getLogger( 'proxy' )
-        self.__pac      = None
-        self.__scheme   = None
-        self.__hostname = None
-        self.__port     = 0
+        self.__logger       = logging.getLogger( 'proxy' )
+        self.__pac          = None
+        self.__scheme       = None
+        self.__hostname     = None
+        self.__port         = 0
+        self.__pacResolver  = None
 
         if isinstance( proxy, dict ):
             if 'pac' in proxy:
                 self.__pac = proxy[ 'pac' ]
+                self.__logger.info( f"Getting PAC data from: {self.__pac}")
+                self.__pacResolver = get_pac( url = self.__pac, timeout = 10,
+                                              allowed_content_types = [ 'application/octet-stream', "application/x-ns-proxy-autoconfig", "application/x-javascript-config" ]
+                                              )
+                self.__logger.info( f"PAC resolver {self.__pacResolver}" )
 
             elif 'scheme' in proxy:
                 self.__scheme = proxy[ 'scheme' ]
@@ -64,13 +70,10 @@ class ProxyMixin( object ):
 
     def resolveViaProxy( self, url ):
         proxyAddr = None
-        if self.__pac is not None and callable( get_pac ):
+        if self.__pac is not None and self.__pacResolver is not None:
             scheme, host, _, _, _, _ = urllib.parse.urlparse(url)
-            self.__logger.info("Getting PAC data from: {url}".format(url=self.__pac))
-            pac = get_pac( url = self.__pac )
-
             self.__logger.info( "Lookup URL {url} with hostname {host}".format( url = url, host = host ) )
-            result = pac.find_proxy_for_url( url, host )
+            result = self.__pacResolver.find_proxy_for_url( url, host )
             self.__logger.info( 'Lookup result "{}"'.format( result ) )
             if result.startswith( 'PROXY ' ):
                 name, proxyAddr = result.split( ' ' )

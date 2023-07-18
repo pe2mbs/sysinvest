@@ -43,6 +43,7 @@ class CheckProcess( MonitorPlugin ):
                     cmdline = proc.cmdline()
                     # self.log.info( "Process {}".format( " ".join( cmdline ) ) )
                     if len( cmdline ) > 0 and cmdline[0] == executable:
+                        self.log.info( f"executable found: {executable} ")
                         count = 0
                         for arg in commandline:
                             if arg in cmdline[1:]:
@@ -50,6 +51,7 @@ class CheckProcess( MonitorPlugin ):
 
                         if count == len(commandline):
                             result = ' '.join( commandline )
+                            self.log.info( f"process found: {executable} {result}")
                             break
 
                 except psutil.AccessDenied:
@@ -60,6 +62,7 @@ class CheckProcess( MonitorPlugin ):
 
             if result is None:
                 result = ' '.join(commandline)
+                self.log.warning( f"process NOT found: {executable} {result}" )
                 task_result.update( False, f"Executable {executable} with command line '{result}' doesn't exist" )
 
             else:

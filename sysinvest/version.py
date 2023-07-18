@@ -1,6 +1,7 @@
 package = "sysInvest"
 description = "Python system monitor and investigation utility"
 version = "0.2.0"
+date="18 July 2023"
 author = "Marc Bertens-Nguyen"
 copyright = "Copyright (C) 2022-2023 Marc Bertens-Nguyen m.bertens@pe2mbs.nl"
 licence = "GPL2-only"

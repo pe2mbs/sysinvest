@@ -39,10 +39,22 @@ class Monitor( list ):
         self.__passes       = 0
         self.__cfg          = config
         for obj in config[ 'objects' ]:
+            if not obj.get('enabled', False ):
+                continue
+
             try:
                 module = obj[ 'module' ]
-                self.log.info( f'Loading module: {obj}')
-                mod = importlib.import_module( f"sysinvest.{module}" )
+                self.log.info( f'Loading monitor: {obj}')
+                if '.' not in module:
+                    module = f'sysinvest.monitor.{module}'
+
+                elif module.startswith( "os." ):
+                    module = f'sysinvest.monitor.{module}'
+
+                elif module.startswith( "monitor." ):
+                    module = f'sysinvest.{module}'
+
+                mod = importlib.import_module( module )
                 getattr( mod, 'CLASS_NAME' )
                 _class = getattr( mod, getattr( mod, 'CLASS_NAME' ) )
                 executor = _class( self, obj )
