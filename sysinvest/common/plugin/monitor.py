@@ -26,6 +26,7 @@ from datetime import datetime
 import sysinvest.common.plugin.constants as const
 from sysinvest.common.plugin.result import PluginResult
 
+
 class MonitorPlugin( object ):
     def __init__( self, parent, obj: dict ):
         self.log = logging.getLogger('plugin')
@@ -42,6 +43,10 @@ class MonitorPlugin( object ):
     @property
     def RunOnStartup( self ) -> bool:
         return self.__runOnStartup
+
+    @property
+    def Enabled( self ) -> bool:
+        return self.__cfg.get( 'enabled', False )
 
     @property
     def Monitor( self ) -> 'Monitor':

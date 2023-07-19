@@ -26,18 +26,21 @@ except:
 
 
 def doRequest( plugin: MonitorPlugin, task_result, url, **kwargs ):
+    plugin.log.info( f"checking URL {url}" )
     r = requests.request( plugin.Attributes.get( 'method', 'GET' ).upper(), url, **kwargs )
     task_result.update( False, "Result code did not match" )
     result_code = plugin.Attributes.get( 'status_code', 200 )
     if r.status_code == result_code:
         content = plugin.Attributes.get( 'content' )
-        plugin.log.info( r.content )
+        plugin.log.debug( r.content )
         if content is not None:
             if r.content != content:
                 task_result.update( False, "Result code did match, but content failed" )
+                plugin.log.info(f"Content failed: {r.content}")
 
             else:
                 task_result.update( True, "Result code did match and content" )
+
 
         else:
             task_result.update( True, "Result code did match" )

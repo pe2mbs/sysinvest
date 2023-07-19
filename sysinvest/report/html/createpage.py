@@ -47,6 +47,7 @@ class WriteHtmlPage( ReportPlugin ):
 
             for directory in ( os.curdir, module_direcory, package_direcory ):
                 tmp = os.path.join( directory, template_filename )
+                self.log.debug( f"Searching: {tmp}" )
                 if os.path.exists( tmp ):
                     template_filename = tmp
                     break
@@ -74,7 +75,16 @@ class WriteHtmlPage( ReportPlugin ):
 
     def publish( self ):
         if self.__template is None:
-            raise Exception( "templat enot loaded" )
+            raise Exception( "template not loaded" )
+
+        remove = []
+        for name, obj in self.__render.items():
+            obj: PluginResult
+            if not obj.Plugin.Enabled:
+                remove.append( name )
+
+        for name in remove:
+            del self.__render[ name ]
 
         interval = self.Config.get( 'interval', 5 )
         try:

@@ -17,9 +17,8 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-import os
 import sys
-import yaml
+import time
 import getopt
 import logging
 import logging.config
@@ -28,6 +27,8 @@ from sysinvest.common.collector import Collector
 from queue import Queue
 import sysinvest.common.api as API
 import sysinvest.version as version
+from sysinvest.common.configuration import ConfigLoader
+
 
 def banner():
     print(f"""{version.package} {version.description}, version {version.version} date {version.date}
@@ -77,33 +78,38 @@ def main():
         else:
             assert False, "unhandled option"
 
-    with open( config, "r" ) as stream:
-        config = yaml.load( stream, Loader = yaml.Loader )
+    configuration = ConfigLoader( config, *args )
+    while configuration.isLoading:
+        time.sleep( 5 )
 
-    log_cfg = config.get( 'logging' )
-    if log_cfg:
-        logging.config.dictConfig( log_cfg )
-
-    # Join the config files
-    tasks = config.setdefault( 'objects', [] )
-    for arg in args:
-        if os.path.exists( arg ):
-            with open(arg, "r") as stream:
-                taskset = yaml.load(stream, Loader=yaml.Loader)
-
-            for key, value in taskset.items():
-                if key == 'objects':
-                    tasks.extend( value )
-
-                else:
-                    config[ key ] = value
-
-        else:
-            raise FileNotFoundError( f"Could not load {arg}" )
-
+    # print( f"Loading configuration: {config}" )
+    # with open( config, "r" ) as stream:
+    #     config = yaml.load( stream, Loader = yaml.Loader )
+    #
+    # log_cfg = config.get( 'logging' )
+    # if log_cfg:
+    #     logging.config.dictConfig( log_cfg )
+    #
+    # # Join the config files
+    # tasks = config.setdefault( 'objects', [] )
+    # for arg in args:
+    #     print( f"Loading tasks: {arg}")
+    #     if os.path.exists( arg ):
+    #         with open(arg, "r") as stream:
+    #             taskset = yaml.load(stream, Loader=yaml.Loader)
+    #
+    #         for key, value in taskset.items():
+    #             if key == 'objects':
+    #                 tasks.extend( value )
+    #
+    #             else:
+    #                 config[ key ] = value
+    #
+    #     else:
+    #         raise FileNotFoundError( f"Could not load {arg}" )
     API.QUEUE           = Queue()
-    processMonitor = Monitor( config )
-    collector = Collector( config )
+    processMonitor = Monitor( configuration )
+    collector = Collector( configuration )
     collector.start()
     processMonitor.run()
     return

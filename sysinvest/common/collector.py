@@ -25,6 +25,8 @@ import _queue
 import threading
 import ctypes
 import sysinvest.common.api as API
+from sysinvest.common.configuration import ConfigLoader
+
 
 def _async_raise( tid, excobj ):
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc( tid, ctypes.py_object( excobj ) )
@@ -39,12 +41,14 @@ def _async_raise( tid, excobj ):
 
     return
 
+
 class Collector( threading.Thread ):
-    def __init__( self, config: dict ):
+    def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.__stop = threading.Event()
         self.__classes = []
-        self.__cfg = config.get( 'collector', {} )
+        self.__cfgClass = config_class
+        self.__cfg = self.__cfgClass.Configuration.get( 'collector', {} )
         self.__messageCount = 0
         self.__lastTime = time.time()
         self.log = logging.getLogger( 'collector' )
@@ -86,12 +90,9 @@ class Collector( threading.Thread ):
         self.__stop.set()
         return
 
-    def stopped(self):
-        return self.__stop.is_set()
-
     def run( self ):
         self.__running = True
-        while not self.stopped():
+        while not self.__stop.is_set():
             try:
                 item = API.QUEUE.get_nowait()
                 self.log.info( f"Dequeue: {item}"  )
@@ -108,7 +109,7 @@ class Collector( threading.Thread ):
                 self.log.info( f"Queue items: {API.QUEUE.qsize()}" )
                 continue
 
-            time.sleep( 5 )
+            self.__stop.wait( 5 )
 
         return
 

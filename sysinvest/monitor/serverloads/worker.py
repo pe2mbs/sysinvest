@@ -36,9 +36,15 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
         self.__thread.start()
         return
 
+    def stop( self ):
+        # Forward the stop to the thread
+        self.__thread.stop()
+        return
+
     def execute( self ):
         task_result = PluginResult( self )
         memInfo, cpuInfo = self.__thread.getLoadData()
+        self.log.info( "Collecting Memory and CPU data" )
         if isinstance( memInfo, MemInfo ):
             messages = []
             memOk   = True

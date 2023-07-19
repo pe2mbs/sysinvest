@@ -122,7 +122,7 @@ class SystemLoads( Thread ):
             self.__lock.release()
             mem = psutil.virtual_memory()
             self.__memData.append( MemInfo( mem ) )
-            time.sleep( 5 - ( time.time() - start ) )
+            self.__event.wait( 5 - ( time.time() - start ) )
             if len( self.__cpuData ) > (12 * 15):
                 self.__lock.acquire()
                 del self.__cpuData[ 0 ]

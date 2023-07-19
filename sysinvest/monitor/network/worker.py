@@ -14,6 +14,11 @@ class NetworkMonitor( MonitorPlugin ):
         self.__thread.start()
         return
 
+    def stop( self ):
+        # Forward the stop to the thread
+        self.__thread.stop()
+        return
+
     def execute( self ):
         task_result = PluginResult( self )
         netInfo = self.__thread.getLoadData()

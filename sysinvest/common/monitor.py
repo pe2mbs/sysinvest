@@ -27,21 +27,19 @@ import importlib
 from threading import Event
 from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
+from sysinvest.common.configuration import ConfigLoader
 
 
 class Monitor( list ):
-    def __init__( self, config ):
+    def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.log            = logging.getLogger( 'monitor' )
         self.__p            = psutil.Process(os.getpid())
         self.__event        = Event()
         self.__running      = False
         self.__passes       = 0
-        self.__cfg          = config
-        for obj in config[ 'objects' ]:
-            if not obj.get('enabled', False ):
-                continue
-
+        self.__cfgClass     = config_class
+        for obj in self.__cfgClass.Configuration[ 'objects' ]:
             try:
                 module = obj[ 'module' ]
                 self.log.info( f'Loading monitor: {obj}')
@@ -101,6 +99,9 @@ class Monitor( list ):
                 start = int( time.time() )
                 for task in self:
                     task: MonitorPlugin
+                    if not task.Enabled:
+                        continue
+
                     if not pycron.is_now( task.Cron ) and not isStarting:
                         continue
 
@@ -113,7 +114,7 @@ class Monitor( list ):
                 sleepTime = 60 - ( int( time.time() ) - start )
                 self.log.info( f"Sleep time: {sleepTime}" )
                 if sleepTime > 0:
-                    time.sleep( sleepTime)
+                    self.__event.wait( sleepTime )
 
         except:
             raise

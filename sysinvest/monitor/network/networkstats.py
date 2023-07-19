@@ -170,7 +170,7 @@ class NetworkInfo( Thread ):
         while not self.__event.is_set():
             # Calculate the time we need to sleep to be at 'interval'
             sleep = self.__interval - ( time.time() - st )
-            time.sleep( sleep )
+            self.__event.wait( sleep )
             st = time.time()
 
             # get the network I/O stats again per interface

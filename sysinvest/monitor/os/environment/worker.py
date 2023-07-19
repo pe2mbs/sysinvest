@@ -30,6 +30,7 @@ class EnvironmentMonitor( MonitorPlugin ):
         errors = []
         messages = []
         task_result = PluginResult(self)
+        self.log.info(f"Checking { platform.uname() } OS environment: { os.environ }")
         try:
             if self.Attributes.get( 'machine', platform.machine() ) != platform.machine():
                 errors.append( f"Machine detected: {platform.machine()}" )

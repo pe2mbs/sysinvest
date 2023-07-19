@@ -47,7 +47,6 @@ class RedisMonitor( MonitorPlugin ):
         ssl         = self.Attributes.get( 'ssl', False )
         port        = self.Attributes.get( 'port', 6379 if not ssl else 6666 )
         database    = self.Attributes.get( 'database', 0 )
-
         if ssl:
             ssl_certfile = self.Attributes.get('ssl-certfile', None )
             ssl_keyfile = self.Attributes.get('ssl-keyfile', None )
@@ -69,6 +68,7 @@ class RedisMonitor( MonitorPlugin ):
             cred = ''
 
         url = f"{scheme}://{cred}{host}:{port}/{database}"
+        self.log.info( f"REDIS checking: {url}")
         task_result = PluginResult( self )
         if redis is not None:
             try:

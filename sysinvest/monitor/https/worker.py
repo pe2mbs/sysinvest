@@ -60,7 +60,7 @@ class Https( MonitorPlugin ):
         super().execute()
         task_result = PluginResult( self )
         kwargs = self.Attributes.get( 'parameters', {} )
-        self.log.info( f"CA certifcates: {certifi.where()}" )
+        self.log.debug( f"CA certifcates: {certifi.where()}" )
 
         if 'username' in kwargs:
             # JNeed to translate the username/password

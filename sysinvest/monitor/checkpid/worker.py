@@ -45,6 +45,7 @@ ${item}
         task_result = PluginResult( self )
         try:
             filename = self.Attributes.get( const.C_FILENAME )
+            self.log.info( f"Checking PID file: {filename}")
             if filename:
                 if os.path.exists( filename ):
                     stat_data = os.stat( filename )

@@ -55,6 +55,7 @@ The database file ${filename} doesn t exist.
         task_result = PluginResult( self )
         filename = self.Attributes.get( 'filename' )
         attrs = { 'exists': False, 'expired': False, 'filename': filename, 'size_valid': True }
+        self.log.info( f"Checking: {filename}" )
         if filename is not None:
             self.log.info( f"Testing {filename} for existance" )
             if os.path.exists( filename ):

@@ -56,6 +56,7 @@ class FileSystemMonitor( MonitorPlugin ):
         super().execute()
         task_result = PluginResult(self)
         filesystem = self.Attributes.get( 'filesystem' )
+        self.log.info( f"Checking filesystem: {filesystem}" )
         try:
             result = []
             messages = []
