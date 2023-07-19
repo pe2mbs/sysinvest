@@ -39,6 +39,10 @@ class Monitor( list ):
         self.__running      = False
         self.__passes       = 0
         self.__cfgClass     = config_class
+        self.loadModules()
+        return
+
+    def loadModules( self ):
         for obj in self.__cfgClass.Configuration[ 'objects' ]:
             try:
                 module = obj[ 'module' ]
@@ -56,7 +60,8 @@ class Monitor( list ):
                 getattr( mod, 'CLASS_NAME' )
                 _class = getattr( mod, getattr( mod, 'CLASS_NAME' ) )
                 executor = _class( self, obj )
-                self.append( executor )
+                if executor not in self:
+                    self.append( executor )
 
             except Exception:
                 self.log.exception( f"During module load: {obj}" )
@@ -115,6 +120,10 @@ class Monitor( list ):
                 self.log.info( f"Sleep time: {sleepTime}" )
                 if sleepTime > 0:
                     self.__event.wait( sleepTime )
+
+                if len( self ) < len( self.__cfgClass.Configuration[ 'objects' ] ):
+                    # We need to load more modules
+                    self.loadModules()
 
         except:
             raise
