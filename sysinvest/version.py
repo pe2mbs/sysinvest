@@ -1,6 +1,6 @@
 package = "sysinvest"
 description = "Python system monitor and investigation utility"
-version = "0.7.1"
+version = "0.8.0"
 date="18 July 2023"
 author = "Marc Bertens-Nguyen"
 author_email="m.bertens@pe2mbs.nl"
