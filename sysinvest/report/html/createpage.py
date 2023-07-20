@@ -89,9 +89,11 @@ class WriteHtmlPage( ReportPlugin ):
         interval = self.Config.get( 'interval', 5 )
         try:
             template_rendered = self.__template.render( pluginResults = self.__render,
-                                                 interval = interval,
-                                                 lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
-                                                 computername = socket.gethostbyaddr(socket.gethostname())[0] )
+                                                        interval = interval,
+                                                        config = self.Config,
+                                                        reporter = self,
+                                                        lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
+                                                        computername = socket.gethostbyaddr(socket.gethostname())[0] )
         except:
             print( exceptions.text_error_template().render() )
             raise
