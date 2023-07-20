@@ -21,8 +21,9 @@ import os
 import stat
 import time
 import traceback
+from datetime import datetime
 import sysinvest.common.plugin.constants as const
-from dateutil import parser
+from sysinvest.common.util import time2seconds
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
 import sysinvest.common.api as API
 from sysinvest.common.bytesizes import shorthand2sizeof
@@ -88,11 +89,10 @@ The database file ${filename} doesn t exist.
                     expire = self.Attributes.get( 'expire' )
                     if expire:
                         if isinstance( expire, str ):
-                            t = parser.parse( expire ).time()
-                            expire = ( t.hour * 3600 ) + ( t.minute * 60 ) + t.second
+                            expire = time2seconds( expire )
 
-                        if stat_data.st_mtime + expire < time.time():
-                            msg = 'File exists, but is expired'
+                        if ( stat_data.st_mtime + expire ) < time.time():
+                            msg = f'File exists, but is expired, is older than { datetime.fromtimestamp( stat_data.st_mtime + expire ) }'
                             attrs[ 'expired' ] = True
                             res = False
 
