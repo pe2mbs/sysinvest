@@ -18,25 +18,17 @@
 #   Boston, MA 02110-1301 USA
 #
 import time
-import copy
 import logging
-from mako import exceptions
-from mako.template import Template
 from datetime import datetime
+from sysinvest.common.plugin.base import PluginBase
 import sysinvest.common.plugin.constants as const
-from sysinvest.common.plugin.result import PluginResult
 
 
-class MonitorPlugin( object ):
-    def __init__( self, parent, obj: dict ):
-        self.log = logging.getLogger('plugin')
-        self.__cfg = obj
+class MonitorPlugin( PluginBase ):
+    def __init__( self, parent, config: dict ):
+        super().__init__( config, parent )
         self.__lasttime = 0
-        self.__parent = parent
         self.__runOnStartup = False
-        if isinstance( obj, dict ):
-            self.__cfg = obj
-
         self.log = logging.getLogger( f"plugin.{self.__class__.__name__}")
         return
 
@@ -46,39 +38,27 @@ class MonitorPlugin( object ):
 
     @property
     def Enabled( self ) -> bool:
-        return self.__cfg.get( 'enabled', False )
-
-    @property
-    def Monitor( self ) -> 'Monitor':
-        return self.__parent
-
-    @property
-    def Collector( self ) -> 'Collector':
-        return self.__parent.Collector
+        return self.Config.get( 'enabled', False )
 
     @property
     def Cron( self ) -> str:
-        return self.__cfg.get( const.C_CRON, '*/5 * * * *' )
+        return self.Config.get( const.C_CRON, '*/5 * * * *' )
 
     @property
     def Group( self ) -> str:
-        return self.__cfg.get( const.C_GROUP, '*' )
+        return self.Config.get( const.C_GROUP, '*' )
 
     @property
     def Priority( self ) -> bool:
-        return self.__cfg.get( const.C_PRIORITY, False )
+        return self.Config.get( const.C_PRIORITY, False )
 
     @property
     def Name( self ) -> str:
-        return self.__cfg.get( const.C_NAME, 'unknown' )
-
-    @property
-    def Config( self ) -> dict:
-        return self.__cfg
+        return self.Config.get( const.C_NAME, 'unknown' )
 
     @property
     def Attributes( self ) -> dict:
-        return self.__cfg.get( const.C_ATTRIBUTES, {} )
+        return self.Config.get( const.C_ATTRIBUTES, {} )
 
     @property
     def LastTime( self ) -> int:
@@ -89,7 +69,7 @@ class MonitorPlugin( object ):
 
     @property
     def Template( self ):
-        templateFile = self.__cfg.get( 'template_file' )
+        templateFile = self.Config.get( 'template_file' )
         if templateFile:
             self.log.info( f'Loading template file: {templateFile}' )
             with open( templateFile ) as stream:
@@ -101,14 +81,10 @@ class MonitorPlugin( object ):
         else:
             default_templ = "${name} => ${result} ${message}"
 
-        return self.__cfg.get( 'template', default_templ ).replace( '\\n', '\n' )
+        return self.Config.get( 'template', default_templ ).replace( '\\n', '\n' )
 
     def runOnStartup( self ) -> None:
         self.__runOnStartup = True
-        return
-
-    def configure( self, config: dict ) -> None:
-        self.__cfg = config
         return
 
     def execute( self ) -> None:

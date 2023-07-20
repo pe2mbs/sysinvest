@@ -60,7 +60,7 @@ class PluginResult( object ):
         self.__state = 1
         self.__data = {}
         self.__plugin = plugin
-        for k, v in self.__plugin.Monitor.info().items():
+        for k, v in self.__plugin.Parent.info().items():
             self.__data[ k ] = v
 
         return
@@ -73,7 +73,7 @@ class PluginResult( object ):
         for k, v in kwargs.items():
             self.__data[ k ] = v
 
-        for k, v in self.Plugin.Monitor.info().items():
+        for k, v in self.Plugin.Parent.info().items():
             self.__data[ k ] = v
 
         self.log.info( f"PluginResult.update( {result}, '{message}', {data}, **{kwargs} )" )

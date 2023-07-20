@@ -20,8 +20,6 @@
 import sys
 import time
 import getopt
-import logging
-import logging.config
 from sysinvest.common.monitor import Monitor
 from sysinvest.common.collector import Collector
 from queue import Queue
@@ -82,32 +80,7 @@ def main():
     while configuration.isLoading:
         time.sleep( 5 )
 
-    # print( f"Loading configuration: {config}" )
-    # with open( config, "r" ) as stream:
-    #     config = yaml.load( stream, Loader = yaml.Loader )
-    #
-    # log_cfg = config.get( 'logging' )
-    # if log_cfg:
-    #     logging.config.dictConfig( log_cfg )
-    #
-    # # Join the config files
-    # tasks = config.setdefault( 'objects', [] )
-    # for arg in args:
-    #     print( f"Loading tasks: {arg}")
-    #     if os.path.exists( arg ):
-    #         with open(arg, "r") as stream:
-    #             taskset = yaml.load(stream, Loader=yaml.Loader)
-    #
-    #         for key, value in taskset.items():
-    #             if key == 'objects':
-    #                 tasks.extend( value )
-    #
-    #             else:
-    #                 config[ key ] = value
-    #
-    #     else:
-    #         raise FileNotFoundError( f"Could not load {arg}" )
-    API.QUEUE           = Queue()
+    API.QUEUE = Queue()
     processMonitor = Monitor( configuration )
     collector = Collector( configuration )
     collector.start()

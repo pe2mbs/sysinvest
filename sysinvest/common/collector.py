@@ -19,6 +19,7 @@
 #
 import time
 import logging
+from datetime import datetime
 from sysinvest.common.plugin.result import PluginResult
 import importlib
 import _queue
@@ -46,14 +47,20 @@ class Collector( threading.Thread ):
     def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.__stop = threading.Event()
+        self.__cfgIndex = 0
         self.__classes = []
         self.__cfgClass = config_class
-        self.__cfg = self.__cfgClass.Configuration.get( 'collector', {} )
         self.__messageCount = 0
         self.__lastTime = time.time()
         self.log = logging.getLogger( 'collector' )
-        for forward in self.__cfg.get( 'forward', [] ):
-            for mod_name in self.__cfg.get( 'modules', [] ):
+        self.__updateConfiguration()
+        return
+
+    def __updateConfiguration(self):
+        self.__cfgIndex += 1
+        cfg = self.__cfgClass.Configuration.get( 'collector', {} )
+        for forward in cfg.get( 'forward', [] ):
+            for mod_name in cfg.get( 'modules', [] ):
                 if not mod_name.endswith( forward ):
                     continue
 
@@ -61,7 +68,10 @@ class Collector( threading.Thread ):
                     self.log.info( f'Loading module: {mod_name}')
                     mod = importlib.import_module( f"sysinvest.{mod_name}" )
                     _class = getattr( mod, getattr( mod, 'REPORT_CLASS' ) )
-                    self.__classes.append( _class( self.__cfg ) )
+                    collector = _class( cfg[ forward ] )
+                    collector.ConfigIndex = self.__cfgIndex
+                    collector.ConfigDateTime = datetime.now()
+                    self.__classes.append( collector )
 
                 except Exception:
                     self.log.exception( f"Probem initializing collector module: {mod_name}" )
@@ -111,6 +121,7 @@ class Collector( threading.Thread ):
 
             self.__stop.wait( 5 )
 
+
         return
 
     def notify( self, event: PluginResult ):
@@ -130,7 +141,7 @@ class Collector( threading.Thread ):
     def publish( self ):
         # For publishing we need to check the threshold values
         doPublish = False
-        thresholds = self.__cfg.get( 'thresholds', {} )
+        thresholds = self.__cfgClass.Configuration.get( 'collector', {} ).get( 'thresholds', {} )
         if self.__messageCount >= thresholds.get( 'messages', 1 ):
             doPublish = True
 

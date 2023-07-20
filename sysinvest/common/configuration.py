@@ -84,10 +84,12 @@ class ConfigLoader( Thread ):
                     for ikey, ivalue in item.items():
                         master[ ikey ] = ivalue
 
-                    master[ 'index'] = self.__updateIndex
+                    master[ 'index' ] = self.__updateIndex
+                    master[ 'update_dt' ] = datetime.now()
 
             if not found:
                 item[ 'index' ] = self.__updateIndex
+                item[ 'update_dt' ] = datetime.now()
                 master_config.append(copy.copy(item))
 
 
@@ -121,7 +123,8 @@ class ConfigLoader( Thread ):
                 else:
                     self.__configuration[ key ] = value
 
-            self.__configuration[ 'index' ] = self.__updateIndex
+            self.__configuration[ 'index' ]     = self.__updateIndex
+            self.__configuration[ 'update_dt' ] = datetime.now()
 
         self.__lastTimeStamp = currentTimeStamp
         for item in self.__configuration[ 'objects' ]:

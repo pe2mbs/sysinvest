@@ -21,7 +21,7 @@ import pycron
 import psutil
 import os
 import time
-import datetime
+from datetime import datetime, timedelta
 import logging
 import importlib
 from threading import Event
@@ -34,34 +34,40 @@ class Monitor( list ):
     def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.log            = logging.getLogger( 'monitor' )
-        self.__p            = psutil.Process(os.getpid())
+        self.__p            = psutil.Process( os.getpid() )
         self.__event        = Event()
         self.__running      = False
         self.__passes       = 0
         self.__cfgClass     = config_class
+        self.__cfgIndex     = 0
         self.loadModules()
         return
 
     def loadModules( self ):
+        self.__cfgIndex += 1
         for obj in self.__cfgClass.Configuration[ 'objects' ]:
             try:
                 module = obj[ 'module' ]
+                mod = None
                 self.log.info( f'Loading monitor: {obj}')
-                if '.' not in module:
-                    module = f'sysinvest.monitor.{module}'
+                for mod_path in ( '', 'sysinvest.', 'sysinvest.monitor.' ):
+                    try:
+                        mod = importlib.import_module( f'{mod_path}{module}' )
+                        getattr(mod, 'CLASS_NAME')
+                        _class = getattr(mod, getattr(mod, 'CLASS_NAME'))
+                        executor = _class( self, obj )
+                        if executor not in self:
+                            self.append( executor )
 
-                elif module.startswith( "os." ):
-                    module = f'sysinvest.monitor.{module}'
+                        executor.ConfigIndex = self.__cfgIndex
+                        executor.ConfigDateTime = datetime.now()
+                        break
 
-                elif module.startswith( "monitor." ):
-                    module = f'sysinvest.{module}'
+                    except:
+                        pass
 
-                mod = importlib.import_module( module )
-                getattr( mod, 'CLASS_NAME' )
-                _class = getattr( mod, getattr( mod, 'CLASS_NAME' ) )
-                executor = _class( self, obj )
-                if executor not in self:
-                    self.append( executor )
+                if mod is None:
+                    self.log.error( f"Could not load {obj}")
 
             except Exception:
                 self.log.exception( f"During module load: {obj}" )
@@ -83,13 +89,13 @@ class Monitor( list ):
         return {}
 
     def info( self ) -> dict:
-        startTime = datetime.datetime.fromtimestamp( self.__p.create_time() )
-        upTime = datetime.datetime.now() - startTime
+        startTime = datetime.fromtimestamp( self.__p.create_time() )
+        upTime = datetime.now() - startTime
         return {
-            'since': startTime.strftime( '%Y-%m-%d %H:%M:%S' ),
-            'uptime': f"{upTime.days} - {str(datetime.timedelta( seconds = upTime.seconds ))}",
+            'since':  startTime.strftime( '%Y-%m-%d %H:%M:%S' ),
+            'uptime': f"{upTime.days} - {str(timedelta( seconds = upTime.seconds ))}",
             'passes': self.__passes,
-            'tasks': len( self )
+            'tasks':  len( self )
         }
 
     def stop( self ):
