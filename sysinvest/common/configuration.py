@@ -7,6 +7,8 @@ import yaml
 import logging
 import logging.config
 
+class InvalidConfig( Exception ): pass
+
 
 class ConfigLoader( Thread ):
     def __init__(self, master_config: str, *option_config: Tuple[str], **kwargs):
@@ -18,7 +20,8 @@ class ConfigLoader( Thread ):
         self.__event                    = Event()
         self.__lastTimeStamp            = 0
         self.__updateIndex              = 0
-        self.__loading                  = True
+        self.__loadingEvent             = Event()
+        self.__loadingEvent.set()
         # This starts the thread and loads the configuration
         self.start()
         return
@@ -54,7 +57,7 @@ class ConfigLoader( Thread ):
         return
 
     def reload(self):
-        self.__loading = True
+        self.__loadingEvent.set()
         self.__updateIndex += 1
         self.load( self.__masterConfig )
         log_cfg = self.__configuration.get( 'logging' )
@@ -68,12 +71,18 @@ class ConfigLoader( Thread ):
             else:
                 raise FileNotFoundError( f"Could not load { configFile }" )
 
-        self.__loading = False
+        self.__loadingEvent.clear()
         return
 
     @property
     def isLoading(self):
-        return self.__loading
+        return self.__loadingEvent.is_set()
+
+    def whileIsLoading( self ):
+        while self.__loadingEvent.is_set():
+            self.__loadingEvent.wait( 5 )
+
+        return
 
     def __updateObjects(self, items, master_config):
         for item in items:
@@ -136,5 +145,3 @@ class ConfigLoader( Thread ):
     @property
     def Configuration( self ) -> dict:
         return self.__configuration
-
-

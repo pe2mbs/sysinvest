@@ -1,0 +1,1 @@
+from flask_sysinvest_clt.extension import SysInvestExtension

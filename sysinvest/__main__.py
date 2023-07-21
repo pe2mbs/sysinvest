@@ -20,12 +20,10 @@
 import sys
 import time
 import getopt
-from sysinvest.common.monitor import Monitor
-from sysinvest.common.collector import Collector
-from queue import Queue
 import sysinvest.common.api as API
 import sysinvest.version as version
 from sysinvest.common.configuration import ConfigLoader
+from sysinvest.execute import execute
 
 
 def banner():
@@ -77,14 +75,9 @@ def main():
             assert False, "unhandled option"
 
     configuration = ConfigLoader( config, *args )
-    while configuration.isLoading:
-        time.sleep( 5 )
-
-    API.QUEUE = Queue()
-    processMonitor = Monitor( configuration )
-    collector = Collector( configuration )
-    collector.start()
-    processMonitor.run()
+    configuration.whileIsLoading()
+    # run this forever
+    execute( configuration, False )
     return
 
 

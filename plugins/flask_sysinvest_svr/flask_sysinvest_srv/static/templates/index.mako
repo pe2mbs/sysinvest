@@ -1,33 +1,9 @@
-from datetime import datetime
-from flask import Flask
-from mako.template import Template
-
-app = Flask( __name__ )
-
-
-TASKS = [
-    {
-        'name':     'Hello',
-        'status':   'OK',
-        'message':  'All ok'
-    },
-    {
-        'name':     'World',
-        'status':   'FAILED',
-        'message':  'Something Failed'
-    },
-    {
-        'name':     'Program scheduler',
-        'status':   'WARNING',
-        'message':  'Wrong state'
-    }
-]
-
-PAGE_TEMPLATE = """<html>
+<html>
     <head>
         <meta charset="utf-8">
         <title>SysInvest infrastructor monitor</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+         <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
         <style>
 .width_100
 {
@@ -126,31 +102,11 @@ setInterval('autoRefresh()', ${interval} * 1000 );
                     <td class="column_status">${task.get('status')}</td>
                     <td class="column_message">${task.get('message')}</td>
                 </tr>
-%endfor     
-            <tbody>   
-        </table>    
+%endfor
+            <tbody>
+        </table>
         <center>
             Configuration ${ configIndex } of ${ configDateTime }
         </center>
     </body>
-</html>"""
-
-@app.route("/")
-def hello_world():
-    COLORS = {
-        'OK': 'green',
-        'FAILED': 'red',
-        'WARNING': 'yellow'
-    }
-    for task in TASKS:
-        task[ 'color' ] = COLORS[ task[ 'status' ] ]
-
-    return Template( PAGE_TEMPLATE ).render( tasks = TASKS,
-                                             interval = 60,
-                                             computername = 'TEST',
-                                             lastTime = datetime.now(),
-                                             configIndex = 1,
-                                             configDateTime = datetime.now(),
-    )
-
-
+</html>

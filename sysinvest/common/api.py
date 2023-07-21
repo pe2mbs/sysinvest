@@ -19,3 +19,5 @@
 #
 QUEUE = None
 verbose = True
+Monitor = None
+Collector = None

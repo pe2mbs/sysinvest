@@ -28,6 +28,7 @@ class MonitorPlugin( PluginBase ):
     def __init__( self, parent, config: dict ):
         super().__init__( config, parent )
         self.__lasttime = 0
+        self.__result   = None
         self.__runOnStartup = False
         self.log = logging.getLogger( f"plugin.{self.__class__.__name__}")
         return
@@ -90,3 +91,20 @@ class MonitorPlugin( PluginBase ):
     def execute( self ) -> None:
         self.__lasttime = time.time()
         return
+
+    @property
+    def Result( self ) -> 'ResultPlugin':
+        return self.__result
+
+    @Result.setter
+    def Result( self, value ):
+        self.__result = value
+        return
+
+    @property
+    def Status( self ):
+        return 'WARNING' if self.__result is None else self.__result.Result
+
+    @property
+    def Message( self ):
+        return 'Initializing' if self.__result is None else self.__result.Message

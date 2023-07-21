@@ -30,8 +30,8 @@ Uptime ${uptime} with no. ${passes} passes, checking ${tasks} tasks
         return
 
     def execute( self ):
-        task_result = PluginResult( self )
+        self.Result = task_result = PluginResult( self )
         self.log.info("Updating")
         task_result.update( True, "Process active" )
-        self.Monitor.addToQueue( task_result )
+        self.Parent.addToQueue( task_result )
         return

@@ -24,13 +24,13 @@ import time
 from datetime import datetime, timedelta
 import logging
 import importlib
-from threading import Event
+from threading import Event, Thread
 from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 from sysinvest.common.configuration import ConfigLoader
 
 
-class Monitor( list ):
+class Monitor( Thread ):
     def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.log            = logging.getLogger( 'monitor' )
@@ -40,7 +40,9 @@ class Monitor( list ):
         self.__passes       = 0
         self.__cfgClass     = config_class
         self.__cfgIndex     = 0
+        self.__modules      = []
         self.loadModules()
+        API.Monitor         = self
         return
 
     def loadModules( self ):
@@ -57,7 +59,7 @@ class Monitor( list ):
                         _class = getattr(mod, getattr(mod, 'CLASS_NAME'))
                         executor = _class( self, obj )
                         if executor not in self:
-                            self.append( executor )
+                            self.__modules.append( executor )
 
                         executor.ConfigIndex = self.__cfgIndex
                         executor.ConfigDateTime = datetime.now()
@@ -95,7 +97,7 @@ class Monitor( list ):
             'since':  startTime.strftime( '%Y-%m-%d %H:%M:%S' ),
             'uptime': f"{upTime.days} - {str(timedelta( seconds = upTime.seconds ))}",
             'passes': self.__passes,
-            'tasks':  len( self )
+            'tasks':  len( self.__modules )
         }
 
     def stop( self ):
@@ -108,7 +110,7 @@ class Monitor( list ):
             while not self.__event.is_set():
                 self.__passes += 1
                 start = int( time.time() )
-                for task in self:
+                for task in self.__modules:
                     task: MonitorPlugin
                     if not task.Enabled:
                         continue
@@ -127,7 +129,7 @@ class Monitor( list ):
                 if sleepTime > 0:
                     self.__event.wait( sleepTime )
 
-                if len( self ) < len( self.__cfgClass.Configuration[ 'objects' ] ):
+                if len( self.__modules ) < len( self.__cfgClass.Configuration[ 'objects' ] ):
                     # We need to load more modules
                     self.loadModules()
 
@@ -136,8 +138,11 @@ class Monitor( list ):
 
         finally:
             # Stop all threaded tasks
-            for task in self:
+            for task in self.__modules:
                 if hasattr( task, 'stop' ):
                     task.stop()
 
         return
+
+    def __iter__(self):
+        return iter( self.__modules )
