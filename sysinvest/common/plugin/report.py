@@ -26,6 +26,7 @@ class ReportPlugin( PluginBase ):
         super().__init__( config.get( name, {} ) )
         self.__name = name
         self.log = logging.getLogger( f"report.{self.__class__.__name__}")
+        self.log.info( f"Config {name}: {self.Config}" )
         return
 
     @property

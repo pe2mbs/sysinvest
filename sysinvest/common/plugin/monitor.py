@@ -29,6 +29,7 @@ class MonitorPlugin( PluginBase ):
         super().__init__( config, parent )
         self.__lasttime = 0
         self.__runOnStartup = False
+        self.__hit = 0
         self.log = logging.getLogger( f"plugin.{self.__class__.__name__}")
         return
 
@@ -89,4 +90,20 @@ class MonitorPlugin( PluginBase ):
 
     def execute( self ) -> None:
         self.__lasttime = time.time()
+        self.__hit += 1
+        return
+
+    @property
+    def Ticket( self ):
+        return self.Config.get( 'ticket', True )
+
+    @property
+    def Hits( self ) -> int:
+        return self.Config.get( 'hits', 1 )
+
+    def hitsReached( self ) -> bool:
+        return self.Hits >= self.__hit
+
+    def resetHits( self ):
+        self.__hit = 0
         return
