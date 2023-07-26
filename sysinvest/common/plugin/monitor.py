@@ -99,11 +99,17 @@ class MonitorPlugin( PluginBase ):
 
     @property
     def Hits( self ) -> int:
-        return self.Config.get( 'hits', 1 )
+        hits = self.Config.get( 'hits', 1 )
+        self.log.info( f"Configured hits: {hits}" )
+        return hits
+
 
     def hitsReached( self ) -> bool:
+        hits = self.Config.get('hits', 1)
+        self.log.info(f"hitsReached: {hits >= self.__hit} (hit counter: {self.__hit}/{hits})")
         return self.Hits >= self.__hit
 
     def resetHits( self ):
+        self.log.info(f"Reset hit counter: {self.__hit}")
         self.__hit = 0
         return

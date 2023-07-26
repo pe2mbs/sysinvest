@@ -36,11 +36,7 @@ class ReportJira( ReportPlugin, ProxyMixin ):
     def notify( self, result: PluginResult ):
         # All is handled here
         plugin: MonitorPlugin = result.Plugin
-        if plugin.Ticket and not result.Result:
-            if not plugin.hitsReached():
-                # Dont send a ticket just yet, wait for the next notify() call
-                return
-
+        if plugin.Ticket and not result.Result and plugin.hitsReached():
             server = self.Config.get( 'host', {} )
             if not isinstance( server, str ):
                 raise Exception( f"jira.host parameter not configured" )
