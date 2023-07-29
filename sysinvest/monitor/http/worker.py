@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import traceback
 import sysinvest.common.plugin.constants as const
 import sysinvest.monitor.http.requester as req
@@ -27,7 +27,6 @@ import sysinvest.common.api as API
 class Http( MonitorPlugin ):
     def execute( self ):
         super().execute()
-        task_result = PluginResult( self )
         kwargs = self.Attributes.get( 'parameters', {} )
         if 'username' in kwargs:
             # JNeed to translate the username/password
@@ -39,17 +38,17 @@ class Http( MonitorPlugin ):
         url = self.Attributes.get( 'url', 'http://localhost' )
         if req.requests is not None:
             try:
-                req.doRequest( self, task_result, url, **kwargs )
+                req.doRequest( self, self, url, **kwargs )
 
             except Exception as exc:
-                task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() },
+                self.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() },
                                        filename = url )
 
         else:
-            task_result.update( False, "Python 'requests' package not installed",
+            self.update( False, "Python 'requests' package not installed",
                                    { const.C_EXCEPTION: "ModuleNotFoundError: No module named 'requests'",
                                      const.C_TRACEBACK: traceback.format_stack() },
                                    filename = url )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

@@ -18,7 +18,7 @@
 #   Boston, MA 02110-1301 USA
 #
 import traceback
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.plugin.constants as const
 import psutil
 import sysinvest.common.api as API
@@ -30,7 +30,6 @@ class CheckProcess( MonitorPlugin ):
 """
     def execute( self ) -> None:
         super().execute()
-        task_result = PluginResult( self )
         try:
             result = None
             executable = self.Attributes.get( 'executable' )
@@ -63,14 +62,14 @@ class CheckProcess( MonitorPlugin ):
             if result is None:
                 result = ' '.join(commandline)
                 self.log.warning( f"process NOT found: {executable} {result}" )
-                task_result.update( False, f"Executable {executable} with command line '{result}' doesn't exist" )
+                self.update( False, f"Executable {executable} with command line '{result}' doesn't exist" )
 
             else:
-                task_result.update( True, f"Executable {executable} with command line '{result}' exist" )
+                self.update( True, f"Executable {executable} with command line '{result}' exist" )
 
         except Exception as exc:
             self.log.exception( "During lookup process" )
-            task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
+            self.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

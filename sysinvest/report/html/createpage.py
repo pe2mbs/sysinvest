@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import PluginResult, MonitorPlugin
+from sysinvest.common.plugin import MonitorPlugin
 from mako.template import Template
 from mako import exceptions
 from datetime import datetime
@@ -35,10 +35,6 @@ class WriteHtmlPage( ReportPlugin ):
         self.__render = {}
         self.__lock = RLock()
         self.__template = None
-        self.loadTemplate()
-        return
-
-    def loadTemplate( self ):
         template_filename = self.Config.get( 'template', 'template_index.mako' )
         if not template_filename.startswith( '/' ) and ':' not in template_filename:
             # relative path
@@ -64,7 +60,7 @@ class WriteHtmlPage( ReportPlugin ):
 
         return
 
-    def notify( self, result: PluginResult ):
+    def notify( self, result: MonitorPlugin ):
         self.log.info( f"{result.Name} notify" )
         self.__lock.acquire()
         self.__render[ result.Name ] = result
@@ -79,8 +75,8 @@ class WriteHtmlPage( ReportPlugin ):
 
         remove = []
         for name, obj in self.__render.items():
-            obj: PluginResult
-            if not obj.Plugin.Enabled:
+            obj: MonitorPlugin
+            if not obj.Enabled:
                 remove.append( name )
 
         for name in remove:

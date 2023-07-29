@@ -20,7 +20,7 @@
 import os
 import psutil
 import traceback
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.plugin.constants as const
 from sysinvest.common.checkpid import checkPidFilename
 import sysinvest.common.api as API
@@ -41,8 +41,7 @@ ${item}
 """
 
     def execute( self ):
-        super().execute(  )
-        task_result = PluginResult( self )
+        super().execute()
         try:
             filename = self.Attributes.get( const.C_FILENAME )
             self.log.info( f"Checking PID file: {filename}")
@@ -62,7 +61,7 @@ ${item}
                     # now check if the PID exists
                     presult, pid = checkPidFilename( filename )
                     if not presult:
-                        task_result.update( False, f"process does not exist", pidFileData, filename = filename, pid = pid )
+                        self.update( False, f"process does not exist", pidFileData, filename = filename, pid = pid )
 
                     else:
                         process = psutil.Process( pid )
@@ -82,31 +81,31 @@ ${item}
 
                                     if len( msg ) == 0:
                                         cmdline = ' '.join(cmdline)
-                                        task_result.update( True, f"process exists: {cmdline}", pidFileData,
+                                        self.update( True, f"process exists: {cmdline}", pidFileData,
                                                             filename=filename, pid=pid)
 
                                     else:
                                         cmdline = ' '.join( cmdline )
-                                        task_result.update( False, f"process exists, but has invalid command line: {cmdline}", pidFileData,
+                                        self.update( False, f"process exists, but has invalid command line: {cmdline}", pidFileData,
                                                             msg = msg, filename=filename, pid=pid)
 
                                 else:
                                     cmdline = ' '.join(cmdline)
-                                    task_result.update(False,
+                                    self.update(False,
                                                        f"process exists, but has invalid executable line: {cmdline}",
                                                        pidFileData, filename=filename, pid=pid)
 
                         else:
-                            task_result.update( True, f"process exists", pidFileData, filename = filename, pid = pid )
+                            self.update( True, f"process exists", pidFileData, filename = filename, pid = pid )
 
                 else:
-                    task_result.update( False, "Filename doesn't exist" )
+                    self.update( False, "Filename doesn't exist" )
 
             else:
-                task_result.update( False, "Filename not configured" )
+                self.update( False, "Filename not configured" )
 
         except Exception as exc:
-            task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
+            self.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

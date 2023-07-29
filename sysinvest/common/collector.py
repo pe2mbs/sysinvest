@@ -20,7 +20,7 @@
 import time
 import logging
 from datetime import datetime
-from sysinvest.common.plugin.result import PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import importlib
 import _queue
 import threading
@@ -124,16 +124,17 @@ class Collector( threading.Thread ):
 
         return
 
-    def notify( self, event: PluginResult ):
+    def notify( self, event: MonitorPlugin ):
         self.log.info( f"notify: {event}" )
-        if not event.Result and not event.Plugin.Priority:
+        if not event.Result and not event.Priority:
             # Count the failed messages
             self.__messageCount += 1
 
         for _class in self.__classes:
             self.log.info( f"notify: {_class}" )
             _class.notify( event )
-            if event.Plugin.Priority:
+            if event.\
+                    Priority:
                 _class.publish()
 
         return

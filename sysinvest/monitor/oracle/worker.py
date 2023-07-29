@@ -52,8 +52,7 @@ class OracleMonitor( SqlMonitorPlugin ):
     # ORDER BY 3 desc , 1 , 2"""
     def execute( self ):
         super().execute()
-        task_result = PluginResult( self )
-        task_result.update( True, "" )
+        self.update( True, "" )
         try:
             self.getDatabaseConfig()
             resultType = self.Attributes.get('type', 'rows')
@@ -68,16 +67,16 @@ class OracleMonitor( SqlMonitorPlugin ):
                     reccount = self.Attributes.get('reccount', None )
                     if isinstance( reccount, int ) and cursor.rowcount != reccount:
                         # Fail
-                        task_result.update(False, f'record count mismatch, expected {reccount}, got {cursor.rowcount}')
+                        self.update(False, f'record count mismatch, expected {reccount}, got {cursor.rowcount}')
 
-                    if task_result.Result:
-                        self.verifyDatabaseResult( cursor, task_result )
+                    if self.Result:
+                        self.verifyDatabaseResult( cursor, self )
 
         except ValueError as exc:
-            task_result.update( False, f"{exc}" )
+            self.update( False, f"{exc}" )
 
         except cx_Oracle.DatabaseError as exc:
-            task_result.update( False, f"{exc}" )
+            self.update( False, f"{exc}" )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

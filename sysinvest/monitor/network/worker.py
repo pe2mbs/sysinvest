@@ -1,4 +1,4 @@
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 from sysinvest.monitor.network.networkstats import NetworkData, NetworkInfo
 from sysinvest.common.bytesizes import sizeof2shorthand, shorthand2sizeof
@@ -20,7 +20,6 @@ class NetworkMonitor( MonitorPlugin ):
         return
 
     def execute( self ):
-        task_result = PluginResult( self )
         netInfo = self.__thread.getLoadData()
         if isinstance( netInfo, list ) and len( netInfo ) > 0:
             messages = []
@@ -60,14 +59,14 @@ class NetworkMonitor( MonitorPlugin ):
                 messages.append( "Network loads normal" )
 
             if netOk:
-                task_result.update( netOk, '\n'.join( messages ), netInfo = netInfo )
+                self.update( netOk, '\n'.join( messages ), netInfo = netInfo )
 
             else:
-                task_result.update( netOk, "{}\n{}".format( '\n'.join( errors ), '\n'.join( messages ) ), netInfo = netInfo )
+                self.update( netOk, "{}\n{}".format( '\n'.join( errors ), '\n'.join( messages ) ), netInfo = netInfo )
 
         else:
-            task_result.update( True, "Collecting", memInfo = [] )
+            self.update( True, "Collecting", memInfo = [] )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return
 

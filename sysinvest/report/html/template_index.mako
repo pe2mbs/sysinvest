@@ -98,7 +98,7 @@ setInterval('autoRefresh()', ${interval} * 1000 );
                         <span class="status_${result.Result}">${"OK" if result.Result else "FAILED" }</span>
                     </td>
                     <td>${ result.buildMessage( [ ( '\n', '<br/>\n' ) ] ) }</td>
-                    <!-- <td>${ result.Details }</td> -->
+                    <!-- <td>{ result.Details }</td> -->
                 </tr>
 %endfor
             </tbody>

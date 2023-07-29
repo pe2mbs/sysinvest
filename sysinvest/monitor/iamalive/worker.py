@@ -17,7 +17,8 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
+import sysinvest.common.api as API
 
 
 class AmiAlive( MonitorPlugin ):
@@ -30,8 +31,7 @@ Uptime ${uptime} with no. ${passes} passes, checking ${tasks} tasks
         return
 
     def execute( self ):
-        self.Result = task_result = PluginResult( self )
         self.log.info("Updating")
-        task_result.update( True, "Process active" )
-        self.Parent.addToQueue( task_result )
+        self.update( True, "Process active" )
+        API.QUEUE.put( self )
         return

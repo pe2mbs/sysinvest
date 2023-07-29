@@ -22,7 +22,7 @@ import time
 import uuid
 from mako.template import Template
 import sysinvest.common.plugin.constants as const
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 try:
     import redis
@@ -69,23 +69,22 @@ class RedisMonitor( MonitorPlugin ):
 
         url = f"{scheme}://{cred}{host}:{port}/{database}"
         self.log.info( f"REDIS checking: {url}")
-        task_result = PluginResult( self )
         if redis is not None:
             try:
                 session = redis.Redis( host, port, database, passwd, ssl = ssl, ssl_keyfile = ssl_keyfile, ssl_certfile =ssl_certfile, username = username  )
-                task_result.update( True, "" )
+                self.update( True, "" )
                 _type = self.Attributes.get( 'type', 'counter' )
                 if _type == 'counter' and self.__token is not None:
                     if session.exists( self.__token ):
                         value = int( session.get( self.__token ) )
                         if self.__counter == value:
-                            task_result.update( True, f"Redis {url} counter {value} on token {self.__token}" )
+                            self.update( True, f"Redis {url} counter {value} on token {self.__token}" )
 
                         else:
-                            task_result.update( False, f"Redis {url} token {self.__token} counter {value} missed a beat, expected {self.__counter}")
+                            self.update( False, f"Redis {url} token {self.__token} counter {value} missed a beat, expected {self.__counter}")
 
                     else:
-                        task_result.update(True, f"Redis {url} initialize counter {self.__counter+1} for token {self.__token}" )
+                        self.update(True, f"Redis {url} initialize counter {self.__counter+1} for token {self.__token}" )
 
                     self.__counter += 1
                     while session.get( self.__token ) is None or int( session.get( self.__token ) ) != self.__counter:
@@ -95,23 +94,23 @@ class RedisMonitor( MonitorPlugin ):
                 session.close()
 
             except ConnectionError:
-                task_result.update(False, f"'redis' {url} Connection ERROR" )
+                self.update(False, f"'redis' {url} Connection ERROR" )
 
             except TimeoutError:
-                task_result.update(False, f"'redis' {url} Connection Timeout ERROR")
+                self.update(False, f"'redis' {url} Connection Timeout ERROR")
 
             except Exception as exc:
                 self.log.exception( f"During REDIS {url}" )
-                task_result.update(False, f"'redis {url}' package thrown an exception: {exc}",
+                self.update(False, f"'redis {url}' package thrown an exception: {exc}",
                                    {const.C_EXCEPTION: str( exc ),
                                     const.C_TRACEBACK: traceback.format_exc()},
                                    filename=url)
 
         else:
-            task_result.update( False, "Python 'redis' package not installed",
+            self.update( False, "Python 'redis' package not installed",
                                    { const.C_EXCEPTION: "ModuleNotFoundError: No module named 'redis'",
                                      const.C_TRACEBACK: traceback.format_stack() },
                                    filename = url )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

@@ -24,7 +24,8 @@ from datetime import datetime
 
 class PluginBase( object ):
     def __init__( self, config: dict, parent = None ):
-        self.__cfg = config
+        self._config = config
+        self._state = 0
         self.__parent = parent
         self.__configIndex = 0
         self.__configDateTime = None
@@ -64,15 +65,30 @@ class PluginBase( object ):
         return
 
     @property
-    def Parent( self ) -> Union[ 'MonitorPlugin','ReportPlugin' ]:
+    def Parent( self ) -> 'MonitorPlugin':
         return self.__parent
 
     @property
     def Config( self ) -> dict:
-        return self.__cfg
+        return self._config
 
     def __getitem__(self, item):
-        if item in self.__cfg:
-            return self.__cfg[ item ]
+        if item in self._config:
+            return self._config[ item ]
 
         raise
+
+    def _getName( self ) -> str:
+        raise NotImplemented()
+
+    def _getEnabled( self ) -> bool:
+        raise NotImplemented()
+
+    @property
+    def Enabled( self ) -> bool:
+        return self._getEnabled()
+
+    @property
+    def Name( self ) -> str:
+        return self._getName()
+
