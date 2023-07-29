@@ -68,7 +68,7 @@ class Collector( threading.Thread ):
                     self.log.info( f'Loading module: {mod_name}')
                     mod = importlib.import_module( f"sysinvest.{mod_name}" )
                     _class = getattr( mod, getattr( mod, 'REPORT_CLASS' ) )
-                    collector = _class( cfg[ forward ] )
+                    collector = _class( cfg )
                     collector.ConfigIndex = self.__cfgIndex
                     collector.ConfigDateTime = datetime.now()
                     self.__classes.append( collector )

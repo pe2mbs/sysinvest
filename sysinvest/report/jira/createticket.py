@@ -17,7 +17,6 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from typing import Union, Optional
 from sysinvest.common.plugin import PluginResult, MonitorPlugin, ReportPlugin
 from sysinvest.common.proxy import ProxyMixin
 try:
@@ -36,8 +35,9 @@ class ReportJira( ReportPlugin, ProxyMixin ):
 
     def notify( self, result: PluginResult ):
         # All is handled here
-        if not result.Result:
-            server = self.Config.get('host', {})
+        plugin: MonitorPlugin = result.Plugin
+        if plugin.Ticket and not result.Result and plugin.hitsReached():
+            server = self.Config.get( 'host', {} )
             if not isinstance( server, str ):
                 raise Exception( f"jira.host parameter not configured" )
 
@@ -63,7 +63,7 @@ class ReportJira( ReportPlugin, ProxyMixin ):
                              logging = True,
                              proxies = self.resolveViaProxy( server ) )
 
-                query = f'summary ~ "{result.Plugin.Name}" and status != Closed'
+                query = f'summary ~ "{plugin.Name}" and status != Closed'
                 jiraIssues = jira.search_issues( query )
                 if isinstance( jiraIssues, dict ) and len( jiraIssues ) > 0:
                     self.log.warning( f"Jira Issue found: {jiraIssues} with status {jiraIssues}" )
@@ -75,7 +75,7 @@ class ReportJira( ReportPlugin, ProxyMixin ):
 
                 else:
                     new_issue = jira.create_issue( project = project,
-                                                   summary = result.Plugin.Name,
+                                                   summary = plugin.Name,
                                                    description = result.buildMessage(),
                                                    priority = { "name": 'Critical' },
                                                    issuetype = { 'name': self.Config.get( 'issue', 'Bug' ) } )
@@ -83,6 +83,8 @@ class ReportJira( ReportPlugin, ProxyMixin ):
                         jira.add_watcher( new_issue, watcher )
 
                     self.log.warning(f"Jira Issue created: {new_issue}")
+
+                plugin.resetHits()
 
             except ConnectionError:
                 self.log.error( f"Could not connect to {server}" )

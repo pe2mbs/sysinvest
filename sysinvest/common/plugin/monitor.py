@@ -60,6 +60,7 @@ class MonitorPlugin( PluginBase ):
         self.__runOnStartup = False
         self.log            = logging.getLogger( f"plugin.{self.__class__.__name__}")
         self._state         = MONITOR_STATE_INIT
+        self.__hit          = 0
         return
 
     def _getName( self ) -> str:
@@ -117,6 +118,28 @@ class MonitorPlugin( PluginBase ):
 
     def execute( self ) -> None:
         self.__lasttime = time.time()
+        self.__hit += 1
+        return
+
+    @property
+    def Ticket( self ):
+        return self.Config.get( 'ticket', True )
+
+    @property
+    def Hits( self ) -> int:
+        hits = self.Config.get( 'hits', 1 )
+        self.log.info( f"Configured hits: {hits}" )
+        return hits
+
+
+    def hitsReached( self ) -> bool:
+        hits = self.Config.get('hits', 1)
+        self.log.info(f"hitsReached: {hits >= self.__hit} (hit counter: {self.__hit}/{hits})")
+        return self.Hits >= self.__hit
+
+    def resetHits( self ):
+        self.log.info(f"Reset hit counter: {self.__hit}")
+        self.__hit = 0
         return
 
     @property
