@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import PluginResult, MonitorPlugin, ReportPlugin
+from sysinvest.common.plugin import MonitorPlugin, ReportPlugin
 from sysinvest.common.proxy import ProxyMixin
 try:
     from jira import JIRA
@@ -33,10 +33,9 @@ class ReportJira( ReportPlugin, ProxyMixin ):
         ProxyMixin.__init__( self, self.Config.get( 'proxy', None ) )
         return
 
-    def notify( self, result: PluginResult ):
+    def notify( self, plugin: MonitorPlugin ):
         # All is handled here
-        plugin: MonitorPlugin = result.Plugin
-        if plugin.Ticket and not result.Result and plugin.hitsReached():
+        if plugin.Ticket and not plugin.Result and plugin.hitsReached():
             server = self.Config.get( 'host', {} )
             if not isinstance( server, str ):
                 raise Exception( f"jira.host parameter not configured" )
@@ -76,7 +75,7 @@ class ReportJira( ReportPlugin, ProxyMixin ):
                 else:
                     new_issue = jira.create_issue( project = project,
                                                    summary = plugin.Name,
-                                                   description = result.buildMessage(),
+                                                   description = plugin.buildMessage(),
                                                    priority = { "name": 'Critical' },
                                                    issuetype = { 'name': self.Config.get( 'issue', 'Bug' ) } )
                     for watcher in self.Config.get( 'watchers', [] ):

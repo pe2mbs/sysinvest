@@ -131,7 +131,6 @@ class MonitorPlugin( PluginBase ):
         self.log.info( f"Configured hits: {hits}" )
         return hits
 
-
     def hitsReached( self ) -> bool:
         hits = self.Config.get('hits', 1)
         self.log.info(f"hitsReached: {hits >= self.__hit} (hit counter: {self.__hit}/{hits})")

@@ -26,7 +26,7 @@ import _queue
 import threading
 import ctypes
 import sysinvest.common.api as API
-from sysinvest.common.configuration import ConfigLoader
+from sysinvest.common.config.configuration import ConfigLoader
 
 
 def _async_raise( tid, excobj ):
@@ -104,10 +104,11 @@ class Collector( threading.Thread ):
         self.__running = True
         while not self.__stop.is_set():
             try:
-                item = API.QUEUE.get_nowait()
-                self.log.info( f"Dequeue: {item}"  )
-                self.notify( item )
-                API.QUEUE.task_done()
+                while True:
+                    item = API.QUEUE.get_nowait()
+                    self.log.info( f"Dequeue: {item}"  )
+                    self.notify( item )
+                    API.QUEUE.task_done()
 
             except _queue.Empty:
                 pass

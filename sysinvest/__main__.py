@@ -18,11 +18,10 @@
 #   Boston, MA 02110-1301 USA
 #
 import sys
-import time
 import getopt
 import sysinvest.common.api as API
 import sysinvest.version as version
-from sysinvest.common.configuration import ConfigLoader
+from sysinvest.common.config.configuration import ConfigLoaderYaml
 from sysinvest.execute import execute
 
 
@@ -74,7 +73,7 @@ def main():
         else:
             assert False, "unhandled option"
 
-    configuration = ConfigLoader( config, *args )
+    configuration = ConfigLoaderYaml( config, *args )
     configuration.whileIsLoading()
     # run this forever
     execute( configuration, False )

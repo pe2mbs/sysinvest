@@ -17,12 +17,11 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import MonitorPlugin
+from sysinvest.common.plugin import MonitorPlugin, ReportPlugin
 from mako.template import Template
 from mako import exceptions
 from datetime import datetime
 from threading import RLock
-from sysinvest.common.plugin import ReportPlugin
 import os
 import socket
 
@@ -60,10 +59,10 @@ class WriteHtmlPage( ReportPlugin ):
 
         return
 
-    def notify( self, result: MonitorPlugin ):
-        self.log.info( f"{result.Name} notify" )
+    def notify( self, plugin: MonitorPlugin ):
+        self.log.info( f"{plugin.Name} notify" )
         self.__lock.acquire()
-        self.__render[ result.Name ] = result
+        self.__render[ plugin.Name ] = plugin
         self.log.info( self.__render )
         self.publish()
         self.__lock.release()

@@ -3,7 +3,7 @@ from mako.template import Template
 from flask import Blueprint
 from sysinvest.execute import execute
 import sysinvest.common.api as API
-from sysinvest.common.configuration import ConfigLoader, InvalidConfig
+from sysinvest.common.config.configuration import ConfigLoader, InvalidConfig
 from sysinvest.common.plugin.monitor import MonitorPlugin
 
 

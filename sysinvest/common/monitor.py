@@ -27,7 +27,7 @@ import importlib
 from threading import Event, Thread
 from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
-from sysinvest.common.configuration import ConfigLoader
+from sysinvest.common.config.configuration import ConfigLoader
 
 
 class Monitor( Thread ):
