@@ -32,7 +32,7 @@ class MySqlMonitor( SqlMonitorPlugin ):
         super().__init__( parent, obj, ( 'mysql','mariadb' ) )
         return
 
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         task_result.update( True, "" )
@@ -63,4 +63,4 @@ class MySqlMonitor( SqlMonitorPlugin ):
             task_result.update( False, f"{exc}" )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

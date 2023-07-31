@@ -25,7 +25,7 @@ import sysinvest.common.api as API
 
 
 class Http( MonitorPlugin ):
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         kwargs = self.Attributes.get( 'parameters', {} )
@@ -52,4 +52,4 @@ class Http( MonitorPlugin ):
                                    filename = url )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

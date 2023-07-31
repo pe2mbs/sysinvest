@@ -41,6 +41,7 @@ class RedisMonitor( MonitorPlugin ):
         return
 
     def execute( self ):
+        super().execute()
         username    = self.Attributes.get( 'username', None )
         passwd      = self.Attributes.get( 'password' )
         host        = self.Attributes.get( 'host', 'localhost' )
@@ -114,4 +115,4 @@ class RedisMonitor( MonitorPlugin ):
                                    filename = url )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

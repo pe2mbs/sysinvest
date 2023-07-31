@@ -18,6 +18,7 @@
 #   Boston, MA 02110-1301 USA
 #
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
+import sysinvest.common.api as API
 
 
 class AmiAlive( MonitorPlugin ):
@@ -29,9 +30,10 @@ Uptime ${uptime} with no. ${passes} passes, checking ${tasks} tasks
         self.runOnStartup()
         return
 
-    def execute( self ):
+    def execute( self ) -> bool:
+        super().execute()
         task_result = PluginResult( self )
         self.log.info("Updating")
         task_result.update( True, "Process active" )
-        self.Monitor.addToQueue( task_result )
-        return
+        API.QUEUE.put( task_result )
+        return task_result.Result

@@ -52,7 +52,7 @@ def checkFileSystem( fs, result, messages ):
 
 
 class FileSystemMonitor( MonitorPlugin ):
-    def execute( self ) -> None:
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult(self)
         filesystem = self.Attributes.get( 'filesystem' )
@@ -84,4 +84,4 @@ class FileSystemMonitor( MonitorPlugin ):
             task_result.update(False, f"{exc}")
 
         API.QUEUE.put(task_result)
-        return
+        return task_result.Result

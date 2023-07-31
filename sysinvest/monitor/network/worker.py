@@ -19,7 +19,7 @@ class NetworkMonitor( MonitorPlugin ):
         self.__thread.stop()
         return
 
-    def execute( self ):
+    def execute( self ) -> bool:
         task_result = PluginResult( self )
         netInfo = self.__thread.getLoadData()
         if isinstance( netInfo, list ) and len( netInfo ) > 0:
@@ -69,5 +69,5 @@ class NetworkMonitor( MonitorPlugin ):
             task_result.update( True, "Collecting", memInfo = [] )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result
 

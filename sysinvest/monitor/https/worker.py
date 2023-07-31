@@ -56,7 +56,7 @@ def checkCertKey( cert, key, result ):
 
 
 class Https( MonitorPlugin ):
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         kwargs = self.Attributes.get( 'parameters', {} )
@@ -129,4 +129,4 @@ class Https( MonitorPlugin ):
                                        filename = url )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

@@ -25,7 +25,7 @@ from mako.template import Template
 
 
 class EnvironmentMonitor( MonitorPlugin ):
-    def execute( self ) -> None:
+    def execute( self ) -> bool:
         super().execute()
         errors = []
         messages = []
@@ -70,5 +70,5 @@ class EnvironmentMonitor( MonitorPlugin ):
             task_result.update(False, f"{exc}")
 
         API.QUEUE.put(task_result)
-        return
+        return task_result.Result
 

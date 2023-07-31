@@ -117,7 +117,9 @@ class Monitor( list ):
                         continue
 
                     self.log.info( f"{task.Name} is being started" )
-                    task.execute()
+                    if task.execute():
+                        task.resetHits()
+
                     self.log.info( f"{task.Name} is finished" )
 
                 isStarting = False

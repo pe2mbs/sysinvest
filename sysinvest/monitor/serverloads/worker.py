@@ -41,7 +41,8 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
         self.__thread.stop()
         return
 
-    def execute( self ):
+    def execute( self ) -> bool:
+        super().execute()
         task_result = PluginResult( self )
         memInfo, cpuInfo = self.__thread.getLoadData()
         self.log.info( "Collecting Memory and CPU data" )
@@ -75,5 +76,5 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
             task_result.update( True, "Collecting", memInfo = memInfo((0,0,0)), cpuInfo = {} )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result
 

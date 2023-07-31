@@ -88,10 +88,11 @@ class MonitorPlugin( PluginBase ):
         self.__runOnStartup = True
         return
 
-    def execute( self ) -> None:
+    def execute( self ) -> bool:
         self.__lasttime = time.time()
         self.__hit += 1
-        return
+        self.log.info(f"Increment hit counter: {self.__hit}")
+        return False
 
     @property
     def Ticket( self ):
@@ -106,8 +107,8 @@ class MonitorPlugin( PluginBase ):
 
     def hitsReached( self ) -> bool:
         hits = self.Config.get('hits', 1)
-        self.log.info(f"hitsReached: {hits >= self.__hit} (hit counter: {self.__hit}/{hits})")
-        return self.Hits >= self.__hit
+        self.log.info(f"hitsReached: {hits <= self.__hit} (hit counter: {self.__hit}/{hits})")
+        return self.Hits <= self.__hit
 
     def resetHits( self ):
         self.log.info(f"Reset hit counter: {self.__hit}")

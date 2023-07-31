@@ -51,7 +51,7 @@ The database file ${filename} doesn t exist.
 %endif
 """
 
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         filename = self.Attributes.get( 'filename' )
@@ -116,4 +116,4 @@ The database file ${filename} doesn t exist.
             task_result.update( False, "Filename not configured", attrs )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

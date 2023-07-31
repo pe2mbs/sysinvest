@@ -50,7 +50,7 @@ class OracleMonitor( SqlMonitorPlugin ):
     #  )
     # group BY state , module_id , dt
     # ORDER BY 3 desc , 1 , 2"""
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         task_result.update( True, "" )
@@ -80,4 +80,4 @@ class OracleMonitor( SqlMonitorPlugin ):
             task_result.update( False, f"{exc}" )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

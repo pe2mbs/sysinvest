@@ -28,7 +28,7 @@ class CheckProcess( MonitorPlugin ):
     DEFAULT_TEMPLATE = """${message}
     
 """
-    def execute( self ) -> None:
+    def execute( self ) -> bool:
         super().execute()
         task_result = PluginResult( self )
         try:
@@ -73,4 +73,4 @@ class CheckProcess( MonitorPlugin ):
             task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result

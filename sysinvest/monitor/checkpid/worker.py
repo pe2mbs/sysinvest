@@ -40,7 +40,7 @@ ${item}
 %endif
 """
 
-    def execute( self ):
+    def execute( self ) -> bool:
         super().execute(  )
         task_result = PluginResult( self )
         try:
@@ -109,4 +109,4 @@ ${item}
             task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
 
         API.QUEUE.put( task_result )
-        return
+        return task_result.Result
