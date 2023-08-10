@@ -20,10 +20,13 @@
 from sysinvest.common.plugin import PluginResult, MonitorPlugin
 from mako.template import Template
 from mako import exceptions
+import sysinvest.version as version
 from datetime import datetime
 from threading import RLock
 from sysinvest.common.plugin import ReportPlugin
 import os
+from datetime import datetime
+import time
 import socket
 
 
@@ -32,6 +35,7 @@ class WriteHtmlPage( ReportPlugin ):
         super().__init__( 'html', config )
         # self.log = logging.getLogger( 'html' )
         self.log.info( f"Initialize reporter html: {self.Config}" )
+        self.__issuesDetected = {}
         self.__render = {}
         self.__lock = RLock()
         self.__template = None
@@ -65,15 +69,21 @@ class WriteHtmlPage( ReportPlugin ):
         return
 
     def notify( self, result: PluginResult ):
-        self.log.info( f"{result.Name} notify" )
         self.__lock.acquire()
         self.__render[ result.Name ] = result
-        self.log.info( self.__render )
+        tm = datetime.now().strftime( "%Y-%m-%d %h:%m" )
+        for key, value in self.__render.items():
+            self.log.info( f"notify item: {key} = {value}" )
+            if not value.Result:
+                self.__issuesDetected.setdefault( tm, 0 )
+                self.__issuesDetected[ tm ] += 1
+
         self.publish()
         self.__lock.release()
         return
 
     def publish( self ):
+        self.log.info( f"Publish {len(self.__render)}")
         if self.__template is None:
             raise Exception( "template not loaded" )
 
@@ -87,22 +97,49 @@ class WriteHtmlPage( ReportPlugin ):
             del self.__render[ name ]
 
         interval = self.Config.get( 'interval', 5 )
+        self.log.info( f"Render page {len(self.__render)}")
         try:
             template_rendered = self.__template.render( pluginResults = self.__render,
                                                         interval = interval,
                                                         config = self.Config,
                                                         reporter = self,
+                                                        issuesDetected = self.__issuesDetected,
+                                                        release = version,
                                                         lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
                                                         computername = socket.gethostbyaddr(socket.gethostname())[0] )
         except:
-            print( exceptions.text_error_template().render() )
+            self.log.error( exceptions.text_error_template().render() )
             raise
 
-        output_filename = self.Config.get( 'location', 'index.html' )
-        if not output_filename.startswith( '/' ) and ':' not in output_filename:
-            output_filename = os.path.join( os.curdir, output_filename )
 
-        with open( output_filename, 'w' ) as stream:
-            stream.write( template_rendered )
+        self.log.info( f"Writing page {len(template_rendered)} bytes")
+        output_filename = self.Config.get( 'location', 'index.html' )
+
+        if not output_filename.startswith('/') and ':' not in output_filename:
+            output_filename = os.path.join(os.curdir, output_filename)
+
+        filepath, filename = os.path.split( output_filename )
+        _filename = os.path.join( filepath, f"_{filename}" )
+        try:
+            with open( _filename, 'w' ) as stream:
+                stream.write( template_rendered )
+
+        except:
+            self.log.exception("During writing of the temp. file")
+
+        cnt = 5
+        while cnt > 0 and os.path.exists( _filename ):
+            cnt -= 1
+            try:
+                if os.path.exists( output_filename ):
+                    os.remove( output_filename )
+
+                os.rename( _filename, output_filename )
+            except:
+                if cnt == 0:
+                    raise
+
+                self.log.error( "Try To rename file, failed" )
+                time.sleep(1)
 
         return

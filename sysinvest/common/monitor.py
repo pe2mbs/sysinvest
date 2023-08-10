@@ -26,6 +26,7 @@ import logging
 import importlib
 from threading import Event
 from sysinvest.common.plugin import MonitorPlugin
+from sysinvest.common.watchdog import ProcessWatchdog
 import sysinvest.common.api as API
 from sysinvest.common.configuration import ConfigLoader
 
@@ -103,9 +104,11 @@ class Monitor( list ):
         return
 
     def run( self ):
+        wd = ProcessWatchdog()
         isStarting = True
         try:
             while not self.__event.is_set():
+                wd.trigger()
                 self.__passes += 1
                 start = int( time.time() )
                 for task in self:

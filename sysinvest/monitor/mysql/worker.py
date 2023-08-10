@@ -38,7 +38,7 @@ class MySqlMonitor( SqlMonitorPlugin ):
         task_result.update( True, "" )
         try:
             self.getDatabaseConfig()
-            resultType = self.Attributes.get('type', 'rows')
+            resultType = self.Attributes.get( 'type', 'rows' )
             with pymysql.connect( host = self.Host, port = self.Port, user = self.Username, password = self.Password, database = self.Database,
                                   cursorclass = pymysql.cursors.Cursor if resultType == 'scalar' else pymysql.cursors.DictCursor ) as connection:
                 with connection.cursor() as cursor:

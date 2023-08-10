@@ -53,6 +53,7 @@ class Collector( threading.Thread ):
         self.__messageCount = 0
         self.__lastTime = time.time()
         self.log = logging.getLogger( 'collector' )
+        self.log.setLevel( logging.DEBUG )
         self.__updateConfiguration()
         return
 
@@ -93,16 +94,18 @@ class Collector( threading.Thread ):
     def terminate(self):
         # must raise the SystemExit type, instead of a SystemExit() instance
         # due to a bug in PyThreadState_SetAsyncExc
+        self.log.warning( f"Termninating the collector")
         self.raise_exc( SystemExit )
         return
 
     def stop( self ):
+        self.log.warning(f"Stopping the collector")
         self.__stop.set()
         return
 
     def run( self ):
-        self.__running = True
         while not self.__stop.is_set():
+            self.log.warning(f"Idle collector")
             try:
                 item = API.QUEUE.get_nowait()
                 self.log.info( f"Dequeue: {item}"  )
@@ -121,7 +124,7 @@ class Collector( threading.Thread ):
 
             self.__stop.wait( 5 )
 
-
+        self.log.warning(f"Stopped collector")
         return
 
     def notify( self, event: PluginResult ):
