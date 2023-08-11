@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 from sysinvest.monitor.serverloads.cpu import SystemLoads, MemInfo, CpuInfo
 
@@ -42,7 +42,6 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
         return
 
     def execute( self ):
-        task_result = PluginResult( self )
         memInfo, cpuInfo = self.__thread.getLoadData()
         self.log.info( "Collecting Memory and CPU data" )
         if isinstance( memInfo, MemInfo ):
@@ -69,11 +68,11 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
             if len( messages ) == 0:
                 messages.append( "Server loads normal" )
 
-            task_result.update( memOk and cpuOk, '\n'.join( messages ), memOk = memOk, cpuOk = cpuOk, memInfo = memInfo, cpuInfo = cpuInfo )
+            self.update( memOk and cpuOk, '\n'.join( messages ), memOk = memOk, cpuOk = cpuOk, memInfo = memInfo, cpuInfo = cpuInfo )
 
         else:
-            task_result.update( True, "Collecting", memInfo = memInfo((0,0,0)), cpuInfo = {} )
+            self.update( True, "Collecting", memInfo = memInfo((0,0,0)), cpuInfo = {} )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return
 

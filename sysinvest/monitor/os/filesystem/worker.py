@@ -19,7 +19,7 @@
 #
 import os
 import shutil
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 from sysinvest.common.bytesizes import shorthand2sizeof, sizeof2shorthand
 
@@ -54,7 +54,6 @@ def checkFileSystem( fs, result, messages ):
 class FileSystemMonitor( MonitorPlugin ):
     def execute( self ) -> None:
         super().execute()
-        task_result = PluginResult(self)
         filesystem = self.Attributes.get( 'filesystem' )
         self.log.info( f"Checking filesystem: {filesystem}" )
         try:
@@ -71,17 +70,17 @@ class FileSystemMonitor( MonitorPlugin ):
                 raise ValueError( "'filesystem' incorrect set or missing" )
 
             if len( result ) == 0:
-                task_result.update(True, "Filesystem OK: \n{}".format( "\n".join( messages ) ) )
+                self.update(True, "Filesystem OK: \n{}".format( "\n".join( messages ) ) )
 
             else:
-                task_result.update(False, "Filesystem NOK: \n{}".format( "\n".join( result ) ) )
+                self.update(False, "Filesystem NOK: \n{}".format( "\n".join( result ) ) )
 
         except ValueError as exc:
-            task_result.update(False, f"{exc}")
+            self.update(False, f"{exc}")
 
         except Exception as exc:
             self.log.exception("in FileSystemMonitor")
-            task_result.update(False, f"{exc}")
+            self.update(False, f"{exc}")
 
-        API.QUEUE.put(task_result)
+        API.QUEUE.put(self)
         return

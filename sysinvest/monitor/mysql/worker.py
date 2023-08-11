@@ -19,10 +19,10 @@
 #
 from mako.template import Template
 from datetime import datetime, timedelta, date, time
+import sysinvest.common.plugin.constants as const
 import pymysql
 import pymysql.cursors
 from pymysql.err import MySQLError
-from sysinvest.common.plugin import PluginResult
 import sysinvest.common.api as API
 from sysinvest.common.dbutil import SqlMonitorPlugin
 
@@ -34,8 +34,7 @@ class MySqlMonitor( SqlMonitorPlugin ):
 
     def execute( self ):
         super().execute()
-        task_result = PluginResult( self )
-        task_result.update( True, "" )
+        self.update( True, "" )
         try:
             self.getDatabaseConfig()
             resultType = self.Attributes.get('type', 'rows')
@@ -51,16 +50,16 @@ class MySqlMonitor( SqlMonitorPlugin ):
                     reccount = self.Attributes.get('reccount', None )
                     if isinstance( reccount, int ) and cursor.rowcount != reccount:
                         # Fail
-                        task_result.update(False, f'record count mismatch, expected {reccount}, got {cursor.rowcount}')
+                        self.update(False, f'record count mismatch, expected {reccount}, got {cursor.rowcount}')
 
-                    if task_result.Result:
-                        self.verifyDatabaseResult( cursor, task_result )
+                    if self.Status == const.C_STATUS_OKE:
+                        self.verifyDatabaseResult( cursor, self )
 
         except ValueError as exc:
-            task_result.update( False, f"{exc}" )
+            self.update( False, f"{exc}" )
 
         except MySQLError as exc:
-            task_result.update( False, f"{exc}" )
+            self.update( False, f"{exc}" )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

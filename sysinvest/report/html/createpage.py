@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import PluginResult, MonitorPlugin
+from sysinvest.common.plugin import MonitorPlugin
 from mako.template import Template
 from mako import exceptions
 from datetime import datetime
@@ -46,17 +46,18 @@ class WriteHtmlPage( ReportPlugin ):
             package_direcory = os.path.abspath( os.path.join( module_direcory, '..', '..' ) )
 
             for directory in ( os.curdir, module_direcory, package_direcory ):
-                tmp = os.path.join( directory, template_filename )
+                tmp = os.path.abspath( os.path.join( directory, template_filename ) )
                 self.log.debug( f"Searching: {tmp}" )
                 if os.path.exists( tmp ):
                     template_filename = tmp
                     break
 
-            if not os.path.exists( template_filename ):
-                raise FileNotFoundError( f"Could not find template {template_filename}" )
-
         if not os.path.exists( template_filename ):
-            raise FileNotFoundError( f"Could not find template {template_filename}" )
+            if os.path.exists( os.path.join( os.path.dirname( __file__ ), template_filename ) ):
+                template_filename = os.path.join( os.path.dirname( __file__ ), template_filename )
+
+            else:
+                raise FileNotFoundError( f"Could not find template {template_filename}" )
 
         self.log.info( f"Loading template {template_filename}")
         with open( template_filename, 'r' ) as stream:
@@ -64,7 +65,7 @@ class WriteHtmlPage( ReportPlugin ):
 
         return
 
-    def notify( self, result: PluginResult ):
+    def notify( self, result: MonitorPlugin ):
         self.log.info( f"{result.Name} notify" )
         self.__lock.acquire()
         self.__render[ result.Name ] = result
@@ -79,8 +80,8 @@ class WriteHtmlPage( ReportPlugin ):
 
         remove = []
         for name, obj in self.__render.items():
-            obj: PluginResult
-            if not obj.Plugin.Enabled:
+            obj: MonitorPlugin
+            if not obj.Enabled:
                 remove.append( name )
 
         for name in remove:

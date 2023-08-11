@@ -47,6 +47,7 @@ class Collector( threading.Thread ):
     def __init__( self, config_class: ConfigLoader ):
         super().__init__()
         self.__stop = threading.Event()
+        self.__notify = threading.Event()
         self.__cfgIndex = 0
         self.__classes = []
         self.__cfgClass = config_class
@@ -98,38 +99,35 @@ class Collector( threading.Thread ):
 
     def stop( self ):
         self.__stop.set()
+        self.__notify.set()
         return
 
     def run( self ):
-        self.__running = True
         while not self.__stop.is_set():
-            try:
-                item = API.QUEUE.get_nowait()
-                self.log.info( f"Dequeue: {item}"  )
-                self.notify( item )
-                API.QUEUE.task_done()
+            if self.__notify.is_set():
+                try:
+                    while True:
+                        item = API.QUEUE.get_nowait()
+                        self.log.info( f"Dequeue: {item}"  )
+                        self.__messageCount += 1
+                        self.notify( item )
+                        API.QUEUE.task_done()
 
-            except _queue.Empty:
-                pass
+                except _queue.Empty:
+                    pass
 
-            except Exception as exc:
-                self.log.exception( f"Exception: {exc}" )
+                except Exception as exc:
+                    self.log.exception( f"Exception: {exc}" )
 
-            if API.QUEUE.qsize() > 0:
-                self.log.info( f"Queue items: {API.QUEUE.qsize()}" )
-                continue
+                finally:
+                    self.__notify.clear()
 
-            self.__stop.wait( 5 )
-
+            self.__notify.wait( 60 )
 
         return
 
     def notify( self, event: PluginResult ):
         self.log.info( f"notify: {event}" )
-        if not event.Result and not event.Plugin.Priority:
-            # Count the failed messages
-            self.__messageCount += 1
-
         for _class in self.__classes:
             self.log.info( f"notify: {_class}" )
             _class.notify( event )
@@ -151,6 +149,7 @@ class Collector( threading.Thread ):
         if not doPublish:
             return
 
+        self.__notify.set()
         for _class in self.__classes:
             _class.publish()
 

@@ -20,9 +20,14 @@
 C_FILENAME      = 'filename'
 C_ATTRIBUTES    = 'attributes'
 C_NAME          = 'name'
+C_ENABLED       = 'enabled'
 C_CRON          = 'cron'
+C_TICKET        = 'ticket'
+C_HITS          = 'hits'
 C_EXCEPTION     = 'exception'
 C_TRACEBACK     = 'stacktrace'
+C_MESSAGE       = 'message'
+C_STATUS        = 'status'
 C_INFO          = 'info'
 C_THRESHOLDS    = 'thresholds'
 C_MEMORY        = 'memory'
@@ -33,3 +38,9 @@ C_CREATE_TIME   = 'create_time'
 C_PID_FILE      = 'pidfile'
 C_GROUP         = 'group'
 C_PRIORITY      = 'priority'
+
+
+C_STATUS_INIT       = 0
+C_STATUS_OKE        = 1
+C_STATUS_WARNING    = 2
+C_STATUS_ERROR      = 9

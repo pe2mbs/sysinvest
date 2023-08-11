@@ -17,7 +17,7 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 try:
     import requests
 
@@ -25,27 +25,27 @@ except:
     requests = None
 
 
-def doRequest( plugin: MonitorPlugin, task_result, url, **kwargs ):
+def doRequest( plugin: MonitorPlugin, url, **kwargs ):
     plugin.log.info( f"checking URL {url}" )
     r = requests.request( plugin.Attributes.get( 'method', 'GET' ).upper(), url, **kwargs )
-    task_result.update( False, "Result code did not match" )
+    plugin.update( False, "Result code did not match" )
     result_code = plugin.Attributes.get( 'status_code', 200 )
     if r.status_code == result_code:
         content = plugin.Attributes.get( 'content' )
         plugin.log.debug( r.content )
         if content is not None:
             if r.content != content:
-                task_result.update( False, "Result code did match, but content failed" )
+                plugin.update( False, "Result code did match, but content failed" )
                 plugin.log.info(f"Content failed: {r.content}")
 
             else:
-                task_result.update( True, "Result code did match and content" )
+                plugin.update( True, "Result code did match and content" )
 
 
         else:
-            task_result.update( True, "Result code did match" )
+            plugin.update( True, "Result code did match" )
 
     else:
-        task_result.update( True, f"Result code did match: {r.status_code} expected: {result_code}" )
+        plugin.update( True, f"Result code did match: {r.status_code} expected: {result_code}" )
 
     return

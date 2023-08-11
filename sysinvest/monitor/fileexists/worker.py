@@ -24,7 +24,7 @@ import traceback
 from datetime import datetime
 import sysinvest.common.plugin.constants as const
 from sysinvest.common.util import time2seconds
-from sysinvest.common.plugin import MonitorPlugin, PluginResult
+from sysinvest.common.plugin import MonitorPlugin
 import sysinvest.common.api as API
 from sysinvest.common.bytesizes import shorthand2sizeof
 
@@ -53,7 +53,6 @@ The database file ${filename} doesn t exist.
 
     def execute( self ):
         super().execute()
-        task_result = PluginResult( self )
         filename = self.Attributes.get( 'filename' )
         attrs = { 'exists': False, 'expired': False, 'filename': filename, 'size_valid': True }
         self.log.info( f"Checking: {filename}" )
@@ -103,17 +102,17 @@ The database file ${filename} doesn t exist.
                         msg = 'File exists'
 
 
-                    task_result.update( res, msg, attrs )
+                    self.update( res, msg, attrs )
 
                 except Exception as exc:
-                    task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() },
+                    self.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() },
                                            filename = filename )
 
             else:
-                task_result.update( False, "Filename doesn't exist", attrs )
+                self.update( False, "Filename doesn't exist", attrs )
 
         else:
-            task_result.update( False, "Filename not configured", attrs )
+            self.update( False, "Filename not configured", attrs )
 
-        API.QUEUE.put( task_result )
+        API.QUEUE.put( self )
         return

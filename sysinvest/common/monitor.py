@@ -74,12 +74,6 @@ class Monitor( list ):
 
         return
 
-    def addToQueue( self, result ):
-        self.log.info( f"Queue add {API.QUEUE.qsize()}" )
-        API.QUEUE.put_nowait( result )
-        self.log.info( f"Queue: {API.QUEUE.qsize()} Done" )
-        return
-
     @property
     def Name( self ):
         return "ProcessMonitor"
@@ -104,6 +98,7 @@ class Monitor( list ):
 
     def run( self ):
         isStarting = True
+        self.__event.clear()
         try:
             while not self.__event.is_set():
                 self.__passes += 1
