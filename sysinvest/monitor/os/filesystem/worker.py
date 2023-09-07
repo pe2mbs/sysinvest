@@ -36,8 +36,24 @@ def checkFileSystem( fs, result, messages ):
     if not os.path.exists( filesystem ):
         result.append( f"{filesystem} doesn't exists" )
 
-    freespace = convertByteSize( fs.get( 'freespace' ) )
     total, used, free = shutil.disk_usage(filesystem)
+    free_space = fs.get('freespace')
+    if isinstance( free_space, int ):
+        freespace = convertByteSize( free_space )
+
+    elif isinstance( free_space, str ):
+        if free_space.endswith( '%' ):
+            free_space_percent = int( free_space[ :-1 ] )
+            freespace = (total / 100) * free_space_percent
+
+        else:
+            result.append( f"{filesystem} freespace is configured wrong" )
+            return
+
+    else:
+        result.append( f"{filesystem} freespace is missing or configured wrong" )
+        return
+
     if freespace is not None and freespace > free:
         result.append( f"{filesystem} freespace {sizeof2shorthand(free)} too less should be at least {sizeof2shorthand(freespace)}")
 
@@ -45,8 +61,12 @@ def checkFileSystem( fs, result, messages ):
         messages.append( f"{filesystem} freespace {sizeof2shorthand(free)}" )
 
     totalspace = convertByteSize( fs.get( 'totalspace' ) )
-    if totalspace is not None and totalspace > total:
-        result.append( f"{filesystem} total disk space {sizeof2shorthand(total)} too less should be at least {sizeof2shorthand(totalspace)}")
+    if totalspace is not None:
+        if totalspace > total:
+            result.append( f"{filesystem} total disk space {sizeof2shorthand(total)} too less should be at least {sizeof2shorthand(totalspace)}")
+
+        else:
+            messages.append( f"{filesystem} total disk space {sizeof2shorthand(total)}")
 
     return
 

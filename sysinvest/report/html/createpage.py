@@ -18,9 +18,11 @@
 #   Boston, MA 02110-1301 USA
 #
 from sysinvest.common.plugin import PluginResult, MonitorPlugin
+from threading import Thread
 from mako.template import Template
 from mako import exceptions
 import sysinvest.version as version
+from flask import Flask
 from datetime import datetime
 from threading import RLock
 from sysinvest.common.plugin import ReportPlugin
@@ -28,6 +30,41 @@ import os
 from datetime import datetime
 import time
 import socket
+
+app = Flask( __name__ )
+page = None
+
+
+def startWebServer():
+    port = 5050
+    host = 'localhost'
+    if not isinstance( page, WriteHtmlPage ):
+        return
+
+    server = page.Config.get('server', {} )
+    host = server.get( 'host', host )
+    port = server.get( 'port', port )
+    app.run( host = host, port = port )
+    return
+
+
+@app.route("/")
+def index():
+    global page
+    if isinstance( page, WriteHtmlPage ):
+        return page.buildPage( page.Config.get( 'interval', 5 ) )
+
+    return "<p>Monitor Currently not available!</p>"
+
+
+@app.route("/sysinvest/")
+def sysinvest():
+    global page
+    if isinstance( page, WriteHtmlPage ):
+        return page.buildPage( page.Config.get( 'interval', 5 ) )
+
+    return "<p>Monitor Currently not available!</p>"
+
 
 
 class WriteHtmlPage( ReportPlugin ):
@@ -40,6 +77,18 @@ class WriteHtmlPage( ReportPlugin ):
         self.__lock = RLock()
         self.__template = None
         self.loadTemplate()
+        # Assign current instance to global variable, for the web server
+        global page
+        page = self
+        server = self.Config.get('server', {})
+        active = server.get('enabled', False)
+        if active:
+            self.log.warning( f"Starting web server: {server}")
+            self.__pageThread = Thread( target = startWebServer )
+            self.__pageThread.start()
+        else:
+            self.log.warning( "Not starting web server" )
+
         return
 
     def loadTemplate( self ):
@@ -96,21 +145,7 @@ class WriteHtmlPage( ReportPlugin ):
         for name in remove:
             del self.__render[ name ]
 
-        interval = self.Config.get( 'interval', 5 )
-        self.log.info( f"Render page {len(self.__render)}")
-        try:
-            template_rendered = self.__template.render( pluginResults = self.__render,
-                                                        interval = interval,
-                                                        config = self.Config,
-                                                        reporter = self,
-                                                        issuesDetected = self.__issuesDetected,
-                                                        release = version,
-                                                        lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
-                                                        computername = socket.gethostbyaddr(socket.gethostname())[0] )
-        except:
-            self.log.error( exceptions.text_error_template().render() )
-            raise
-
+        template_rendered = self.buildPage( self.Config.get( 'interval', 5 ) )
 
         self.log.info( f"Writing page {len(template_rendered)} bytes")
         output_filename = self.Config.get( 'location', 'index.html' )
@@ -143,3 +178,20 @@ class WriteHtmlPage( ReportPlugin ):
                 time.sleep(1)
 
         return
+
+    def buildPage( self, interval ):
+        self.log.info( f"Render page {len(self.__render)}")
+        try:
+            template_rendered = self.__template.render( pluginResults = self.__render,
+                                                        interval = interval,
+                                                        config = self.Config,
+                                                        reporter = self,
+                                                        issuesDetected = self.__issuesDetected,
+                                                        release = version,
+                                                        lastTime = datetime.now().strftime( "%Y-%m-%d - %H:%M:%S"),
+                                                        computername = socket.gethostbyaddr(socket.gethostname())[0] )
+        except:
+            self.log.error( exceptions.text_error_template().render() )
+            raise
+
+        return template_rendered
