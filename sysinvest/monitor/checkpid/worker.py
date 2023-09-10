@@ -42,6 +42,7 @@ ${item}
 
     def execute( self ) -> bool:
         super().execute(  )
+        pid = 0
         task_result = PluginResult( self )
         try:
             filename = self.Attributes.get( const.C_FILENAME )
@@ -100,10 +101,10 @@ ${item}
                             task_result.update( True, f"process exists", pidFileData, filename = filename, pid = pid )
 
                 else:
-                    task_result.update( False, "Filename doesn't exist" )
+                    task_result.update( False, "Filename doesn't exist", filename = filename, pid = pid )
 
             else:
-                task_result.update( False, "Filename not configured" )
+                task_result.update( False, "Filename not configured", filename = filename, pid = pid )
 
         except Exception as exc:
             task_result.update( False, str(exc), { const.C_EXCEPTION: exc, const.C_TRACEBACK: traceback.format_exc() } )
