@@ -127,9 +127,9 @@ class ConfigLoader( Thread ):
             self.__configuration[ 'update_dt' ] = datetime.now()
 
         self.__lastTimeStamp = currentTimeStamp
-        for item in self.__configuration[ 'objects' ]:
-            if item.get( 'index', 0 ) < self.__updateIndex:
-                item[ 'enabled' ] = False
+        # for item in self.__configuration[ 'objects' ]:
+        #     if item.get( 'index', 0 ) < self.__updateIndex:
+        #         item[ 'enabled' ] = False
 
         return
 

@@ -4,7 +4,7 @@ from os.path import split as path_split
 import sys
 import time
 from threading import Thread, RLock, Condition, Lock
-from signal import CTRL_BREAK_EVENT, SIGABRT
+from signal import SIGABRT
 
 
 class WatchdogEvent( object ):

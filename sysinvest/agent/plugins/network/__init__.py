@@ -17,5 +17,5 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-QUEUE = None
-verbose = True
+from sysinvest.agent.plugins.network.worker import NetworkMonitor
+CLASS_NAME = 'NetworkMonitor'

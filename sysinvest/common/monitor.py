@@ -21,18 +21,26 @@ import pycron
 import psutil
 import os
 import time
-from datetime import datetime, timedelta
 import logging
 import importlib
 from threading import Event
-from sysinvest.common.plugin import MonitorPlugin
+from sysinvest.common.interfaces import TaskStatus
+from sysinvest.common.plugin_agent import MonitorPluginAgent
 from sysinvest.common.watchdog import ProcessWatchdog
-import sysinvest.common.api as API
 from sysinvest.common.configuration import ConfigLoader
+from abc import ABC, abstractmethod
+
+
+class AbstractForwarder( ABC ):
+    @abstractmethod
+    def put( self, plugin: MonitorPluginAgent ):
+        raise NotImplemented()
+
+
 
 
 class Monitor( list ):
-    def __init__( self, config_class: ConfigLoader ):
+    def __init__( self, config_class: ConfigLoader, forwarder: AbstractForwarder ):
         super().__init__()
         self.log            = logging.getLogger( 'monitor' )
         self.__p            = psutil.Process( os.getpid() )
@@ -41,6 +49,7 @@ class Monitor( list ):
         self.__passes       = 0
         self.__cfgClass     = config_class
         self.__cfgIndex     = 0
+        self.__forwarder    = forwarder
         self.loadModules()
         return
 
@@ -51,34 +60,32 @@ class Monitor( list ):
                 module = obj[ 'module' ]
                 mod = None
                 self.log.info( f'Loading monitor: {obj}')
-                for mod_path in ( '', 'sysinvest.', 'sysinvest.monitor.' ):
+                for mod_path in ( 'sysinvest.agent.plugins', 'sysinvest.plugins' ):
                     try:
-                        mod = importlib.import_module( f'{mod_path}{module}' )
+                        mod = importlib.import_module( f'{mod_path}.{module}' )
                         getattr(mod, 'CLASS_NAME')
                         _class = getattr(mod, getattr(mod, 'CLASS_NAME'))
                         executor = _class( self, obj )
+                        if not executor.Enabled:
+                            self.log.warning( f"{ module } not enabled '{executor.Name}'" )
+                            break
+
                         if executor not in self:
                             self.append( executor )
 
-                        executor.ConfigIndex = self.__cfgIndex
-                        executor.ConfigDateTime = datetime.now()
                         break
 
-                    except:
-                        pass
+                    except ModuleNotFoundError:
+                        self.log.error( f"{mod_path}.{module} was not found" )
 
-                if mod is None:
-                    self.log.error( f"Could not load {obj}")
+                    except Exception:
+                        self.log.exception( f"During loading of {module}" )
+                        pass
 
             except Exception:
                 self.log.exception( f"During module load: {obj}" )
 
-        return
-
-    def addToQueue( self, result ):
-        self.log.info( f"Queue add {API.QUEUE.qsize()}" )
-        API.QUEUE.put_nowait( result )
-        self.log.info( f"Queue: {API.QUEUE.qsize()} Done" )
+        self.log.info( f"Modules loaded: { len( self ) }" )
         return
 
     @property
@@ -86,18 +93,8 @@ class Monitor( list ):
         return "ProcessMonitor"
 
     @property
-    def Attributes( self ):
-        return {}
-
-    def info( self ) -> dict:
-        startTime = datetime.fromtimestamp( self.__p.create_time() )
-        upTime = datetime.now() - startTime
-        return {
-            'since':  startTime.strftime( '%Y-%m-%d %H:%M:%S' ),
-            'uptime': f"{upTime.days} - {str(timedelta( seconds = upTime.seconds ))}",
-            'passes': self.__passes,
-            'tasks':  len( self )
-        }
+    def TaskCount( self ) -> int:
+        return len( [ e for e in self if e.Enabled ] )
 
     def stop( self ):
         self.__event.set()
@@ -106,23 +103,26 @@ class Monitor( list ):
     def run( self ):
         wd = ProcessWatchdog()
         isStarting = True
+        self.log.info( f"No of tasks: { len( self ) }" )
         try:
             while not self.__event.is_set():
                 wd.trigger()
                 self.__passes += 1
                 start = int( time.time() )
                 for task in self:
-                    task: MonitorPlugin
+                    task: MonitorPluginAgent
+                    task.Passes = self.__passes
                     if not task.Enabled:
                         continue
 
-                    if not pycron.is_now( task.Cron ) and not isStarting:
+                    if not isStarting and not pycron.is_now( task.Cron ):
                         continue
 
                     self.log.info( f"{task.Name} is being started" )
-                    if task.execute():
+                    if task.execute() == TaskStatus.OK:
                         task.resetHits()
 
+                    self.__forwarder.put( task )
                     self.log.info( f"{task.Name} is finished" )
 
                 isStarting = False
@@ -131,10 +131,6 @@ class Monitor( list ):
                 self.log.info( f"Sleep time: {sleepTime}" )
                 if sleepTime > 0:
                     self.__event.wait( sleepTime )
-
-                if len( self ) < len( self.__cfgClass.Configuration[ 'objects' ] ):
-                    # We need to load more modules
-                    self.loadModules()
 
         except:
             raise

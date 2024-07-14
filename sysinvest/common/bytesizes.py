@@ -1,6 +1,6 @@
 #
 #   sysinvest - Python system monitor and investigation utility
-#   Copyright (C) 2022-2023 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
+#   Copyright (C) 2022-2024 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
 #
 #   This library is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU Library General Public License GPL-2.0-only
@@ -17,6 +17,8 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
+import typing as t
+
 
 def sizeof2shorthand( num: int, suffix: str = "B" ):
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
@@ -27,9 +29,12 @@ def sizeof2shorthand( num: int, suffix: str = "B" ):
 
     return f"{num:.1f}Yi{suffix}"
 
-def shorthand2sizeof( num: str, suffix: str = "B" ):
+def shorthand2sizeof( num: t.Union[ str, int ], suffix: str = "B" ):
     number = 0.0
     sizedesc = ''
+    if isinstance( num, int ):
+        num = str( num )
+
     for idx, ch in enumerate( num ):
         if not ch.isdigit() and ch not in (',', '.'):
             number = float( num[:idx].replace( ',', '.' ) )

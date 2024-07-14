@@ -17,5 +17,27 @@
 #   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #   Boston, MA 02110-1301 USA
 #
-QUEUE = None
-verbose = True
+import logging
+from sysinvest.common.plugin_base import PluginBase
+
+
+class ReportPlugin( PluginBase ):
+    def __init__( self, name: str, config: dict ):
+        super().__init__( config.get( name, {} ) )
+        self.__name = name
+        self.log = logging.getLogger( f"report.{self.__class__.__name__}")
+        self.log.info( f"Config {name}: {self.Config}" )
+        return
+
+    @property
+    def Name( self ):
+        return self.__name
+
+    def notify( self, result: 'PluginResult' ):
+        raise NotImplemented()
+
+    def publish( self ):
+        raise NotImplemented()
+
+
+
