@@ -21,7 +21,7 @@ import typing as t
 import logging
 from datetime import datetime, timezone
 from sysinvest.common.interfaces import TaskStatus, ExceptionData
-from sysinvest.common.plugin_base import PluginBase
+from   sysinvest.common.plugin_base import PluginBase
 import sysinvest.common.constants as const
 
 

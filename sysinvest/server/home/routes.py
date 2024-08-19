@@ -111,7 +111,8 @@ def index():
         allServices = allHosts()
         return render_template( 'home/index.html', segment='index.html', hosts = allServices.Hosts, allServices = allServices )
     
-    except TemplateNotFound:
+    except TemplateNotFound as exc:
+        logger.error( f"{exc}" )
         return render_template('home/page-404.html'), 404
 
     except:
