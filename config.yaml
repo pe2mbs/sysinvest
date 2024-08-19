@@ -1,0 +1,75 @@
+DEBUG: True
+ASSETS_ROOT: /static/assets
+# Security
+SECRET_KEY: 'e^E)8hucY~+7dN)"'
+SESSION_COOKIE_HTTPONLY: True
+REMEMBER_COOKIE_HTTPONLY: True
+REMEMBER_COOKIE_DURATION: 3600
+# Database
+SQLALCHEMY_DATABASE_URI: sqlite:////home/mbertens/src/python/sysinvest/db.sqlite3
+# Host
+HOST:   0.0.0.0
+PORT:   5001
+# Logging
+LOGGING:
+    version: 1
+    formatters:
+        short:
+            format: '%(message)s'
+        brief:
+            format: '%(asctime)s %(levelname)-8s "%(name)-25s" %(message)s'
+            datefmt: '%Y-%m-%d %H:%M:%S'
+        precise:
+            format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+            datefmt: '%Y-%m-%d %H:%M:%S'
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: brief
+            level: DEBUG
+            stream: ext://sys.stdout
+        file:
+            class: logging.handlers.RotatingFileHandler
+            formatter: precise
+            filename: server.log
+            maxBytes: 10240000
+            level: DEBUG
+            backupCount: 3
+        wsgi-access:
+            class: logging.handlers.RotatingFileHandler
+            formatter: precise
+            filename: access-log.log
+            maxBytes: 10240000
+            level: DEBUG
+            backupCount: 3
+    loggers:
+        home:
+            level: DEBUG
+        waitress:
+            level: DEBUG
+        wsgi:
+            level: DEBUG
+            propagate: false
+            handlers:
+            -    wsgi-access
+#        collector:
+#            level: INFO
+#            handlers:
+#                - console
+#                - file
+#        plugin:
+#            level: DEBUG
+#            handlers:
+#                - console
+#                - file
+#        agent:
+#            level: DEBUG
+#            handlers:
+#                - console
+#                - file
+
+    root:
+        level: DEBUG
+        handlers:
+        -   console
+        -   file

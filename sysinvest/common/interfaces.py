@@ -8,7 +8,11 @@ from datetime import datetime
 class MyBaseModel( BaseModel ):
     def pprint( self ):
         print( orjson.dumps( BaseModel.dict( self ), option = orjson.OPT_INDENT_2 ).decode('utf-8') )
+        return
 
+    def log( self, caller ):
+        caller( orjson.dumps( BaseModel.dict( self ), option = orjson.OPT_INDENT_2 ).decode( 'utf-8' ) )
+        return;
 
 class TaskStatus( enum.Enum ):
     COLLECTING = 0
@@ -75,7 +79,7 @@ class OverallCpuLoadData( MyBaseModel ):
     minute_5_load:  float
     minute_15_load: float
     cores:          t.List[ CpuLoadData ]
-
+    percent:        float
 
 class MemoryLoadData( MyBaseModel ):
     total:          int
@@ -175,3 +179,15 @@ class EnvironmentData( MyBaseModel ):
     uname:          str
     environment:    t.Optional[ t.List[ EnvironmentVars ] ] = None
 
+
+class SensorData( MyBaseModel ):
+    package:        str
+    sensor:         str
+    input:          float
+    crit:           float
+    max:            t.Optional[ float ] = None
+    crit_alarm:     t.Optional[ float ] = None
+
+
+class SensorsData( MyBaseModel ):
+    features:       t.List[ SensorData ]

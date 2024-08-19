@@ -18,7 +18,9 @@
 #   Boston, MA 02110-1301 USA
 #
 import platform
+import socket
 import sys
+import pytz
 from datetime import datetime, timezone
 from time import sleep
 import getopt
@@ -35,7 +37,12 @@ import logging
 
 logger = logging.getLogger( 'agent' )
 
+
 class Forwarder( AbstractForwarder ):
+    def __init__( self, config: ConfigLoader ):
+        self.__config = config
+        return
+
     def put( self, plugin: MonitorPluginAgent ):
         logger.info( repr( plugin.serverData ) )
         if plugin.serverData is None:
@@ -47,19 +54,23 @@ class Forwarder( AbstractForwarder ):
         else:
             class_name = plugin.serverData.__class__.__name__
 
-        req = AgentRequest( timestamp = datetime.utcnow().replace(tzinfo = timezone.utc),
+        hostname = self.__config.get( 'hostname', socket.getfqdn( platform.node() ) )
+        ts = pytz.timezone('Europe/Amsterdam')
+        req = AgentRequest( timestamp = datetime.now(ts),
                             source = plugin.Name,
                             result = plugin.Status,
                             details = plugin.serverData,
                             message = plugin.Message,
                             class_name = class_name,
-                            hostname = platform.node(),
+                            hostname = hostname,
                             version = version.version,
                             release = version.date )
         headers = { "Content-Type": "application/json" }
         try:
-            print( f"{ orjson.dumps( req.dict(), option = orjson.OPT_INDENT_2 ).decode('utf-8') }" )
-            r = requests.post( 'http://localhost:5000/api/agent', data = orjson.dumps( req.dict() ), headers = headers )
+            URL = self.__config.Configuration.get( 'collector', {} ).get( 'url', 'http://localhost:5001/api/agent' )
+            # print( f"{ orjson.dumps( req.dict(), option = orjson.OPT_INDENT_2 ).decode('utf-8') }" )
+            logger.info( f"Sending to {URL}" )
+            r = requests.post( URL, data = orjson.dumps( req.dict() ), headers = headers )
             logger.info( f"STATUS {r.status_code} - {r.content}" )
 
         except requests.exceptions.ConnectionError:
@@ -121,7 +132,7 @@ def main():
         sleep( 1 )
 
     print( "Starting the main loop" )
-    processMonitor = Monitor( configuration, Forwarder() )
+    processMonitor = Monitor( configuration, Forwarder( configuration ) )
     processMonitor.run()
     return
 

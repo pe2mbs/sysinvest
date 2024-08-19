@@ -3,6 +3,20 @@ psutil
 python-dateutil
 PyYAML
 pycron
+Flask
+Werkzeug
+Jinja2
+Flask-Login
+Flask-Migrate
+WTForms
+Flask-WTF
+Flask-SQLAlchemy
+SQLAlchemy
+email_validator
+gunicorn
+flask-restx
+python-dotenv
+Flask-Minify
 
 # For HTTP/HTTPS
 # requests

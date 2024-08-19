@@ -71,10 +71,10 @@ def updateProcessData( process, data: ProcessData ):
         mem_info = process.memory_full_info() if linux else process.memory_info()
         data.rss = mem_info.rss
         data.vms = mem_info.vms
-        if linux:
-            data.shared = mem_info.shared
-
-        elif windows:
-            data.pfaults = mem_info.num_page_faults
+        # if linux:
+        #     data.shared = mem_info.shared
+        #
+        # elif windows:
+        #     data.pfaults = mem_info.num_page_faults
 
     return

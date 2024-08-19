@@ -102,34 +102,38 @@ class ConfigLoader( Thread ):
         else:
             print( f"Loading configuration: {config_file}" )
 
-        currentTimeStamp = self.__lastTimeStamp
-        with open( config_file, "r" ) as stream:
-            stat = os.fstat( stream.fileno() )
-            if currentTimeStamp < stat.st_mtime:
-                currentTimeStamp = stat.st_mtime
+        try:
+            currentTimeStamp = self.__lastTimeStamp
+            with open( config_file, "r" ) as stream:
+                stat = os.fstat( stream.fileno() )
+                if currentTimeStamp < stat.st_mtime:
+                    currentTimeStamp = stat.st_mtime
 
-            config = yaml.load(stream, Loader=yaml.Loader)
-            # Copy the configuration
-            for key, value in config.items():
-                if key == 'objects':
-                    if key in self.__configuration:
-                        # This is the list with actions
-                        self.__updateObjects( value, self.__configuration[ key ] )
+                config = yaml.load(stream, Loader=yaml.Loader)
+                # Copy the configuration
+                for key, value in config.items():
+                    if key == 'objects':
+                        if key in self.__configuration:
+                            # This is the list with actions
+                            self.__updateObjects( value, self.__configuration[ key ] )
+
+                        else:
+                            for item in value:
+                                self.__configuration.setdefault( key, [] ).append( copy.copy( item ) )
 
                     else:
-                        for item in value:
-                            self.__configuration.setdefault( key, [] ).append( copy.copy( item ) )
+                        self.__configuration[ key ] = value
 
-                else:
-                    self.__configuration[ key ] = value
+                self.__configuration[ 'index' ]     = self.__updateIndex
+                self.__configuration[ 'update_dt' ] = datetime.now()
 
-            self.__configuration[ 'index' ]     = self.__updateIndex
-            self.__configuration[ 'update_dt' ] = datetime.now()
-
-        self.__lastTimeStamp = currentTimeStamp
-        # for item in self.__configuration[ 'objects' ]:
-        #     if item.get( 'index', 0 ) < self.__updateIndex:
-        #         item[ 'enabled' ] = False
+            self.__lastTimeStamp = currentTimeStamp
+            # for item in self.__configuration[ 'objects' ]:
+            #     if item.get( 'index', 0 ) < self.__updateIndex:
+            #         item[ 'enabled' ] = False
+        except Exception:
+            self.log.exception( "During loading of the configuration" )
+            exit( -1 )
 
         return
 
@@ -137,4 +141,5 @@ class ConfigLoader( Thread ):
     def Configuration( self ) -> dict:
         return self.__configuration
 
-
+    def get( self, key, default_value = None ):
+        return self.__configuration.get( key, default_value )

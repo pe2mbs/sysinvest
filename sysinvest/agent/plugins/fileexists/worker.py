@@ -28,8 +28,6 @@ from sysinvest.common.plugin_agent import MonitorPluginAgent
 from sysinvest.common.bytesizes import shorthand2sizeof
 
 
-
-
 class CheckFileAgent( MonitorPluginAgent ):
     def __init__( self, parent, obj: dict ):
         super().__init__( parent, obj )

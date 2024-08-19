@@ -22,6 +22,7 @@ from sysinvest.common.plugin_agent import MonitorPluginAgent
 import sysinvest.common.api as API
 from sysinvest.agent.plugins.serverloads.cpu import SystemLoads
 from  datetime import datetime, timezone
+import pytz
 
 
 class SystemLoadsAgent( MonitorPluginAgent ):
@@ -74,16 +75,17 @@ CPU usage 1 min: ${ round( cpuInfo.get( "total", {} ).get( "1 min" ), 2 ) }% / 5
                     messages.append( "Server loads collecting" )
 
                 else:
-                    messages.append( "Server loads normal" )
+                    messages.append( f"Server loads normal\nCPU: {cpuInfo.percent} %\nMEMORY: {memInfo.percent} %" )
 
             self.Status = TaskStatus.OK
+            self.Message = '\n'.join(messages)
             self.setServerData( ServerLoadsData( cpu = cpuOk, mem = memOk,
                                                  messages = messages,
                                                  cpuLoad = cpuInfo,
                                                  memload = memInfo,
                                                  since = self.Since,
                                                  tasks = self.Parent.TaskCount,
-                                                 lasttime = datetime.utcnow().replace( tzinfo = timezone.utc ) ) )
+                                                 lasttime = datetime.now( pytz.timezone('Europe/Amsterdam') ) ) )
 
         else:
             self.Status = TaskStatus.COLLECTING

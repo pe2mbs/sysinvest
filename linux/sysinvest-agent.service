@@ -1,0 +1,10 @@
+[Unit]
+Description=sysInvest monitor Agent
+After=network.target
+[Service]
+Type=simple
+WorkingDirectory=/home/mbertens/sysinvest
+ExecStart=/home/mbertens/sysinvest/venv/bin/sysInvestAgent --config agent-configuration.yaml
+Restart=always
+[Install]
+WantedBy=multi-user.target

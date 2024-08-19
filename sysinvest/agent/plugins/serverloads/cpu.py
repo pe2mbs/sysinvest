@@ -104,7 +104,8 @@ class SystemLoads( Thread ):
         return OverallCpuLoadData( minute_1_load = total_min1 / noCpus,
                                    minute_5_load = total_min5 / noCpus,
                                    minute_15_load = total_min15 / noCpus,
-                                   cores = cores )
+                                   cores = cores,
+                                   percent = total_min5 / noCpus )
 
     def stop( self ):
         self.__event.set()

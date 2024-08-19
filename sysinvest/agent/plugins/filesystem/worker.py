@@ -55,16 +55,16 @@ class FileSystemAgent( MonitorPluginAgent ):
         if isinstance( partition.free_space, str ):
             if partition.free_space.endswith( '%' ):
                 free_space_percent = int( partition.free_space[ :-1 ] )
-                freespace = int((total / 100) * free_space_percent)
 
             else:
-                freespace = int( partition.free_space )
+                # TODO: need to deal with <size> G | M | K | bytes
+                free_space_percent = int( partition.free_space )
 
         elif isinstance( partition.free_space, int ):
-            freespace = int( partition.free_space )
+            free_space_percent = int( partition.free_space )
 
         elif partition.free_space is None:
-            info.free_percent = ((total-used)/total) * 100
+            free_space_percent = 0
             info.free_valid = True
             return info
 
@@ -72,8 +72,7 @@ class FileSystemAgent( MonitorPluginAgent ):
             raise InvalidFreeSpace()
 
         info.free_percent = ((total-used)/total) * 100
-        print( info.free, freespace, total-used )
-        info.free_valid = info.free > (total-freespace)
+        info.free_valid = info.free_percent > free_space_percent
         return info
 
 

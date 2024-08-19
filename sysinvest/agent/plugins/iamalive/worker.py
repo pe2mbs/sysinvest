@@ -24,7 +24,7 @@ from sysinvest.common.checkpid import updateProcessData
 from sysinvest.common.interfaces import ProcessData, TaskStatus, ExceptionData
 from sysinvest.common.plugin_agent import MonitorPluginAgent
 from datetime import datetime, timezone
-import sysinvest.common.api as API
+import pytz
 
 
 class IamAliveAgent( MonitorPluginAgent ):
@@ -33,8 +33,8 @@ class IamAliveAgent( MonitorPluginAgent ):
         self.__pid = os.getpid()
         self.Status = TaskStatus.COLLECTING
         self.setServerData( ProcessData( pid = self.__pid,
-                                         since = datetime.utcnow().replace(tzinfo = timezone.utc),
-                                         lasttime = datetime.utcnow().replace(tzinfo = timezone.utc),
+                                         since = datetime.now( pytz.timezone('Europe/Amsterdam') ),
+                                         lasttime = datetime.now( pytz.timezone('Europe/Amsterdam') ),
                                          tasks = len( parent ) ) )
         self.runOnStartup()
         return
@@ -43,18 +43,21 @@ class IamAliveAgent( MonitorPluginAgent ):
         super().execute()
         self.log.info( "Updating" )
         self.serverData.tasks = len( self.Parent )
-        self.serverData.lasttime = datetime.utcnow().replace(tzinfo = timezone.utc)
+        self.serverData.lasttime = datetime.now( pytz.timezone('Europe/Amsterdam') )
         try:
             process = psutil.Process( self.__pid )
             updateProcessData( process, self.serverData )
+            self.Message = 'Running'
             self.Status = TaskStatus.OK
 
         except psutil.NoSuchProcess as exc:
             self.Status = TaskStatus.FAILED
+            self.Message = 'NoSuchProcesss'
             self.setExceptionData( exc, traceback.extract_stack() )
 
         except Exception as exc:
             self.log.exception( "During lookup process" )
+            self.Message = str( exc )
             self.Status = TaskStatus.FAILED
             self.setExceptionData( exc, traceback.extract_stack() )
 

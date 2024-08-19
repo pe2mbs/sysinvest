@@ -83,16 +83,30 @@ setup(
         'python-dateutil',
         'PyYAML',
         'pycron',
+        'requests',
+        'sensors.py==2.0',
+        'pytz',
+        'lxml',
+        'pydantic==2.8.2',
+        'orjson==3.10.6',
+        'SQLAlchemy==2.0.31',
+        'waitress',
+        'Flask==3.0.3',
+        'Flask-Login==0.6.3',
+        'Flask-Migrate==4.0.7',
+        'Flask-Minify==0.48',
+        'Flask-Pydantic==0.12.0',
+        'flask-restx==1.3.0',
+        'Flask-SQLAlchemy==3.1.1',
+        'Flask-WTF==1.2.1',
         'importlib-metadata; python_version >= "3.8"'
     ],
     include_package_data=True,
-    package_data={ "": [ "*.md", "*.mako" ],
-                   "sysinvest": [ 'template/*.*', 'sysinvest/report/template_index.mako' ],
-                   },
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'sysInvest=sysinvest.__main__:main',
+            'sysInvestAgent=sysinvest.agent.__main__:main',
+            'sysInvestServer=sysinvest.server.__main__:main',
         ]
     }
 
