@@ -1,0 +1,79 @@
+{% extends "layouts/base.html" %}
+{% block title %} Dashboard {% endblock %} 
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+        <meta http-equiv="refresh" content="60" >
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+        <div class="container-fluid px-4">
+            <h1 class="mt-4">Dashboard</h1>
+            <div class="row">
+                <div class="row">
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card bg-success text-white mb-4">
+                            <div class="card-body">Running services: {{allServices.ok}}</div>
+                        </div>
+                    </div>
+                     <div class="col-xl-4 col-md-6">
+                        <div class="card bg-warning text-white mb-4">
+                            <div class="card-body">Warning service: {{allServices.warn}}</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card bg-danger text-white mb-4">
+                            <div class="card-body">Failed services: {{allServices.fail}}</div>
+                        </div>
+                    </div>
+                </div>   
+            </div>
+            <div class="card mb-4">
+                <table id="dashboard">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Hostname</th>
+                            <th>Service name</th>
+                            <th>Result</th>
+                            <th>Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+{% for item in allServices %}
+{% if item.StatusCode != 1 %}
+                        <tr>
+                            <td style="width: 13%;">
+                                {{ item.Time }}
+                            </td>
+                            <td style="width: 15%;">
+                                {{ item.hostname }}
+                            </td>
+                            <td style="width: 20%;">
+                                <a class="{{ item.css }}" href="{{ item.href }}">
+                                    {{ item.caption }}
+                                </a>
+                            </td>
+                            <td style="width: 7%;" class="{{ item.css }}">
+
+                                {{ item.StatusText }}
+                            </td>
+                            <td style="width: 45%;" class="{{ item.css }}"><pre>
+                                {{ item.info }}
+                            </pre></td>
+                        </tr>
+{% endif %}                        
+{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<!--    <script src="/static/assets/js/Chart.min.js"></script>-->
+<!--    <script src="/static/assets/demo/chart-area-demo.js"></script>-->
+<!--    <script src="/static/assets/demo/chart-bar-demo.js"></script>-->
+    <script src="/static/assets/js/simple-datatables-latest.js"></script>
+    <script src="/static/assets/js/datatables-simple-demo.js"></script>
+{% endblock javascripts %}
