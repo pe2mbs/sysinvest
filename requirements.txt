@@ -3,6 +3,9 @@ psutil
 python-dateutil
 PyYAML
 pycron
+urllib3
+flask
+humanfriendly
 
 # For HTTP/HTTPS
 # requests

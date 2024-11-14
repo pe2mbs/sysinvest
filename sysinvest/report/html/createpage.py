@@ -1,6 +1,6 @@
 #
 #   sysinvest - Python system monitor and investigation utility
-#   Copyright (C) 2022-2023 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
+#   Copyright (C) 2022-2024 Marc Bertens-Nguyen m.bertens@pe2mbs.nl
 #
 #   This library is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU Library General Public License GPL-2.0-only
@@ -98,8 +98,8 @@ class WriteHtmlPage( ReportPlugin ):
             module_direcory = os.path.abspath( os.path.dirname( __file__ ) )
             package_direcory = os.path.abspath( os.path.join( module_direcory, '..', '..' ) )
 
-            for directory in ( os.curdir, module_direcory, package_direcory ):
-                tmp = os.path.join( directory, template_filename )
+            for directory in ( os.path.abspath( os.curdir ), module_direcory, package_direcory ):
+                tmp = os.path.abspath( os.path.join( directory, template_filename ) )
                 self.log.debug( f"Searching: {tmp}" )
                 if os.path.exists( tmp ):
                     template_filename = tmp

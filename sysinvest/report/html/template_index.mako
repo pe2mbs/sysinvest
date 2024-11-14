@@ -103,8 +103,6 @@ setInterval('autoRefresh()', ${interval} * 1000 );
 %endfor
             </tbody>
         </table>
-        <center>
-            Configuration ${ reporter.ConfigIndex } of ${ reporter.ConfigDateTimeStr() }
-        </center>
+        <footer style="width: 100%; text-align: center;"><h3>Version ${ release.version } - ${ release.copyright }</h3></footer>
     </body>
 </html>
