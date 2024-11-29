@@ -24,11 +24,11 @@ from mako.template import Template
 import sysinvest.common.plugin.constants as const
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
 import sysinvest.common.api as API
-try:
-    import redis
+#try:
+import redis
 
-except ModuleNotFoundError:
-    redis = None
+# except ModuleNotFoundError:
+#     redis = None
 
 
 class RedisMonitor( MonitorPlugin ):
@@ -37,25 +37,24 @@ class RedisMonitor( MonitorPlugin ):
     def __init__( self, parent, obj ):
         super().__init__( parent, obj )
         self.__counter = 0
-        self.__token = Template(self.Attributes.get('token')).render(uuid=uuid)
-        return
-
-    def execute( self ):
-        super().execute()
-        username    = self.Attributes.get( 'username', None )
-        passwd      = self.Attributes.get( 'password' )
-        host        = self.Attributes.get( 'host', 'localhost' )
-        ssl         = self.Attributes.get( 'ssl', False )
-        port        = self.Attributes.get( 'port', 6379 if not ssl else 6666 )
-        database    = self.Attributes.get( 'database', 0 )
+        self.__token = Template( text = self.Attributes.get( 'token' ) ).render( uuid = uuid )
+        ssl = self.Attributes.get('ssl', False)
+        host = self.Attributes.get( 'host', 'localhost' )
+        port = self.Attributes.get( 'port', 6379 if not ssl else 6666 )
+        database= self.Attributes.get( 'database', 0 )
+        passwd = self.Attributes.get( 'password' )
+        username = self.Attributes.get( 'username' )
+        redis_kwargs = {}
         if ssl:
-            ssl_certfile = self.Attributes.get('ssl-certfile', None )
-            ssl_keyfile = self.Attributes.get('ssl-keyfile', None )
+            redis_kwargs = { 'ssl_certfile': self.Attributes.get('ssl-certfile', None ),
+                             'ssl_keyfile': self.Attributes.get('ssl-keyfile', None ),
+                             'connection_class': redis.SSLConnection }
             scheme = 'rediss'
 
         else:
             ssl_keyfile = ssl_certfile = None
             scheme = 'redis'
+            redis_kwargs[ 'connection_class' ] = redis.Connection
 
         if passwd is not None:
             _passwd = '*' * len(passwd)
@@ -68,25 +67,40 @@ class RedisMonitor( MonitorPlugin ):
         else:
             cred = ''
 
-        url = f"{scheme}://{cred}{host}:{port}/{database}"
-        self.log.info( f"REDIS checking: {url}")
+        self.__redisUrl = f"{scheme}://{cred}{host}:{port}/{database}"
+        self.log.info(f"REDIS checking: {self.__redisUrl}")
+        self.__redisPool = redis.ConnectionPool( host=host,
+                                                 port=port,
+                                                 db=database,
+                                                 max_connections = 2,
+                                                 password=passwd,
+                                                 **redis_kwargs
+                                                )
+        return
+
+    def execute( self ):
+        super().execute()
+        self.log.info( f"REDIS checking: {self.__redisUrl}")
         task_result = PluginResult( self )
         if redis is not None:
             try:
-                session = redis.Redis( host, port, database, passwd, ssl = ssl, ssl_keyfile = ssl_keyfile, ssl_certfile =ssl_certfile, username = username  )
+                session = redis.Redis( connection_pool = self.__redisPool  )
                 task_result.update( True, "" )
                 _type = self.Attributes.get( 'type', 'counter' )
                 if _type == 'counter' and self.__token is not None:
                     if session.exists( self.__token ):
                         value = int( session.get( self.__token ) )
                         if self.__counter == value:
-                            task_result.update( True, f"Redis {url} counter {value} on token {self.__token}" )
+                            task_result.update( True, f"Redis {self.__redisUrl} counter {value} on "
+                                                      f"token {self.__token}" )
 
                         else:
-                            task_result.update( False, f"Redis {url} token {self.__token} counter {value} missed a beat, expected {self.__counter}")
+                            task_result.update( False, f"Redis {self.__redisUrl} token {self.__token} counter {value} "
+                                                       f"missed a beat, expected {self.__counter}")
 
                     else:
-                        task_result.update(True, f"Redis {url} initialize counter {self.__counter+1} for token {self.__token}" )
+                        task_result.update(True, f"Redis {self.__redisUrl} initialize counter {self.__counter+1} for "
+                                                 f"token {self.__token}" )
 
                     self.__counter += 1
                     while session.get( self.__token ) is None or int( session.get( self.__token ) ) != self.__counter:
@@ -96,23 +110,23 @@ class RedisMonitor( MonitorPlugin ):
                 session.close()
 
             except ConnectionError:
-                task_result.update(False, f"'redis' {url} Connection ERROR" )
+                task_result.update(False, f"'redis' {self.__redisUrl} Connection ERROR" )
 
             except TimeoutError:
-                task_result.update(False, f"'redis' {url} Connection Timeout ERROR")
+                task_result.update(False, f"'redis' {self.__redisUrl} Connection Timeout ERROR")
 
             except Exception as exc:
-                self.log.exception( f"During REDIS {url}" )
-                task_result.update(False, f"'redis {url}' package thrown an exception: {exc}",
+                self.log.exception( f"During REDIS {self.__redisUrl}" )
+                task_result.update(False, f"'redis {self.__redisUrl}' package thrown an exception: {exc}",
                                    {const.C_EXCEPTION: str( exc ),
                                     const.C_TRACEBACK: traceback.format_exc()},
-                                   filename=url)
+                                   filename = self.__redisUrl )
 
         else:
             task_result.update( False, "Python 'redis' package not installed",
                                    { const.C_EXCEPTION: "ModuleNotFoundError: No module named 'redis'",
                                      const.C_TRACEBACK: traceback.format_stack() },
-                                   filename = url )
+                                   filename = self.__redisUrl )
 
         API.QUEUE.put( task_result )
         return task_result.Result

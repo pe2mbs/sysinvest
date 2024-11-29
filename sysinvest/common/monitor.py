@@ -64,7 +64,11 @@ class Monitor( list ):
                         executor.ConfigDateTime = datetime.now()
                         break
 
-                    except:
+                    except ModuleNotFoundError:
+                        pass
+
+                    except Exception as exc:
+                        self.log.error(f"Could not load {exc}")
                         pass
 
                 if mod is None:
