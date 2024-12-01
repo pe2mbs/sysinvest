@@ -20,6 +20,7 @@
 import traceback
 import time
 import uuid
+import platform
 from mako.template import Template
 import sysinvest.common.plugin.constants as const
 from sysinvest.common.plugin import MonitorPlugin, PluginResult
@@ -74,6 +75,7 @@ class RedisMonitor( MonitorPlugin ):
                                                  db=database,
                                                  max_connections = 2,
                                                  password=passwd,
+                                                 client_name = f'systinvest-{platform.node()}',
                                                  **redis_kwargs
                                                 )
         return
@@ -85,6 +87,7 @@ class RedisMonitor( MonitorPlugin ):
         if redis is not None:
             try:
                 session = redis.Redis( connection_pool = self.__redisPool  )
+                session.client().client_setname( f'systinvest-{platform.node()}' )
                 task_result.update( True, "" )
                 _type = self.Attributes.get( 'type', 'counter' )
                 if _type == 'counter' and self.__token is not None:
